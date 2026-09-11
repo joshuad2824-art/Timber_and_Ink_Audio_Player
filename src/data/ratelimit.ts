@@ -12,7 +12,21 @@ import { db } from "./db";
    quietly undercount under exactly the concurrency an attacker creates. */
 
 const WINDOW_MS = 10 * 60 * 1000; // ten minutes
-const MAX_ATTEMPTS = 10; // per IP per window, across all records
+
+/**
+ * Separate buckets, because the two doors protect different things.
+ *
+ * Sharing one would mean a listener fumbling a phrase on the home wifi counts
+ * against the owner's own sign-in attempts — locking them out of their desk
+ * from the next room. The desk is also stricter: there is exactly one correct
+ * password and the person who knows it does not guess.
+ */
+export type RateScope = "record" | "admin";
+
+const MAX_ATTEMPTS: Record<RateScope, number> = {
+  record: 10,
+  admin: 5,
+};
 
 export type RateVerdict = { allowed: boolean; retryAfterSeconds: number };
 
@@ -21,17 +35,20 @@ export type RateVerdict = { allowed: boolean; retryAfterSeconds: number };
  * through. Called before the phrase is checked, so a blocked IP never even
  * reaches the hash comparison.
  */
-export async function checkRate(ip: string): Promise<RateVerdict> {
+export async function checkRate(
+  ip: string,
+  scope: RateScope = "record",
+): Promise<RateVerdict> {
   const since = new Date(Date.now() - WINDOW_MS);
 
   const rows = (await db().sql`
     SELECT COUNT(*) AS n
       FROM unlock_attempt
-     WHERE ip = ${ip} AND attempted_at > ${since}
+     WHERE ip = ${ip} AND scope = ${scope} AND attempted_at > ${since}
   `) as unknown as Array<{ n: string | number }>;
 
   const count = Number(rows[0]?.n ?? 0);
-  if (count < MAX_ATTEMPTS) return { allowed: true, retryAfterSeconds: 0 };
+  if (count < MAX_ATTEMPTS[scope]) return { allowed: true, retryAfterSeconds: 0 };
 
   return { allowed: false, retryAfterSeconds: Math.ceil(WINDOW_MS / 1000) };
 }
@@ -43,11 +60,15 @@ export async function checkRate(ip: string): Promise<RateVerdict> {
  * Only failures are recorded. A listener who types their phrase correctly the
  * first time should never be a step closer to being locked out.
  */
-export async function recordFailure(ip: string, slug: string): Promise<void> {
+export async function recordFailure(
+  ip: string,
+  slug: string,
+  scope: RateScope = "record",
+): Promise<void> {
   const cutoff = new Date(Date.now() - WINDOW_MS);
 
   await db().sql`
-    INSERT INTO unlock_attempt (ip, slug) VALUES (${ip}, ${slug})
+    INSERT INTO unlock_attempt (ip, slug, scope) VALUES (${ip}, ${slug}, ${scope})
   `;
   await db().sql`
     DELETE FROM unlock_attempt WHERE attempted_at < ${cutoff}
@@ -55,8 +76,11 @@ export async function recordFailure(ip: string, slug: string): Promise<void> {
 }
 
 /** Clear an IP's failures after a success, so one good phrase resets the count. */
-export async function clearFailures(ip: string): Promise<void> {
-  await db().sql`DELETE FROM unlock_attempt WHERE ip = ${ip}`;
+export async function clearFailures(
+  ip: string,
+  scope: RateScope = "record",
+): Promise<void> {
+  await db().sql`DELETE FROM unlock_attempt WHERE ip = ${ip} AND scope = ${scope}`;
 }
 
 /**

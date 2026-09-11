@@ -1,0 +1,64 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--sh-ink-muted);
+}
+
+/* Kept in the accessibility tree and focusable; just not visible. */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--control-well);
+  border: 1px solid var(--sh-border-soft);
+  transition: border-color var(--sh-motion);
+}
+
+.knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--sh-ink-muted);
+  transition: transform var(--sh-motion), background-color var(--sh-motion);
+}
+
+.text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  transition: color var(--sh-motion);
+}
+
+.input:checked + .track {
+  border-color: var(--sh-brass);
+}
+
+.input:checked + .track .knob {
+  transform: translateX(20px);
+  background: var(--sh-brass-bright);
+}
+
+.input:checked ~ .text {
+  color: var(--sh-ink-body);
+}
+
+.input:focus-visible + .track {
+  box-shadow: 0 0 0 2px var(--sh-page), 0 0 0 4px var(--sh-amber-hover);
+}

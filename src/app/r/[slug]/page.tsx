@@ -5,6 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { Backdrop } from "@/chrome/Backdrop";
 import { KeyCap, PairedRule } from "@/ui/devices";
 import { getAvailableFormats, getGateRecord, getUnlockedRecord } from "@/data/catalog";
+import { isAdmin } from "@/data/admin";
+import { AdminBar } from "@/chrome/AdminBar";
 import { GateForm } from "./GateForm";
 import { Album } from "./Album";
 import styles from "../../screens.module.css";
@@ -35,7 +37,7 @@ export default async function RecordPage({
        is simply not up yet, without the client asking. */
     const formats = await getAvailableFormats(slug);
     const playable = Object.keys(formats).filter((id) => formats[id].includes("flac"));
-    return <Album record={record} playable={playable} />;
+    return <Album record={record} playable={playable} admin={await isAdmin()} />;
   }
 
   // Not unlocked. Drafts are invisible here too, so a 404 cannot be used to
@@ -45,6 +47,7 @@ export default async function RecordPage({
 
   return (
     <Backdrop>
+      {(await isAdmin()) && <AdminBar note="Phrases don't stop you here" />}
       <section className={styles.centered}>
         <div className={styles.column}>
           <Link href="/" className={styles.backLink}>

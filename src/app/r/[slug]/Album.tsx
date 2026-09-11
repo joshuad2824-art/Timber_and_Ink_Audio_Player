@@ -6,6 +6,7 @@ import { PairedRule, PhotoMat, PressedPlate } from "@/ui/devices";
 import { recordMeta } from "@/data/phrase";
 import type { RecordDetail } from "@/data/types";
 import { AlbumPlayer } from "@/player/AlbumPlayer";
+import { AdminBar } from "@/chrome/AdminBar";
 import { LockItBack } from "./LockItBack";
 import styles from "../../screens.module.css";
 import album from "./album.module.css";
@@ -21,12 +22,15 @@ import type_ from "@/ui/type.module.css";
 export function Album({
   record,
   playable,
+  admin = false,
 }: {
   record: RecordDetail;
   playable: string[];
+  admin?: boolean;
 }) {
   return (
     <Backdrop>
+      {admin && <AdminBar note="Phrases don't stop you here" />}
       <section className={styles.album}>
         <div className={album.header}>
           <Link href="/" className={styles.backLink}>

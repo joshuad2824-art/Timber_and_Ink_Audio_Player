@@ -6,6 +6,7 @@ import { formatDuration } from "@/data/phrase";
 import type { Track } from "@/data/types";
 import { PlayerEngine, type PlayerSnapshot } from "./engine";
 import { PlayerBar } from "./PlayerBar";
+import { Switch } from "@/ui/Switch";
 import album from "@/app/r/[slug]/album.module.css";
 import type_ from "@/ui/type.module.css";
 
@@ -52,18 +53,11 @@ export function AlbumPlayer({
           the bar: it changes how the album plays through, not how this moment
           sounds. "Keep it on your device" joins it here in milestone 5. */}
       <div className={album.optionsRow}>
-        <label className={album.switchLabel}>
-          <input
-            type="checkbox"
-            className={album.switchInput}
-            checked={state.crossfade}
-            onChange={(e) => engine.setCrossfade(e.target.checked)}
-          />
-          <span className={album.switchTrack} aria-hidden="true">
-            <span className={album.switchKnob} />
-          </span>
-          <span className={type_.signageSmall}>Crossfade</span>
-        </label>
+        <Switch
+          label="Crossfade"
+          checked={state.crossfade}
+          onChange={(next) => engine.setCrossfade(next)}
+        />
       </div>
 
       <div className={album.tracks}>
