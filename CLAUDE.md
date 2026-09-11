@@ -73,10 +73,16 @@ The prototype checks phrases in the browser and prints them on screen. In produc
   an iPhone quietly gets the MP3 rather than a bookmark that lies. The
   `N of M tracks are on this device.` line reads the real Cache API either way.
 - **Downloads are MP3**, 320 kbps.
-- **Transcoding happens in the owner's browser.** The desk runs ffmpeg.wasm: a
-  dropped WAV is turned into FLAC and MP3 locally and only those upload, in
-  chunks. Netlify caps a function request body around 6 MB and a 42-minute WAV
-  is 727 MB, so the master must never cross the wire whole.
+- **Transcoding happens in the owner's browser.** A dropped WAV is turned into
+  FLAC and MP3 locally and only those upload, in 3 MB chunks. Netlify caps a
+  function request body at a few megabytes and a 42-minute WAV is 727 MB, so the
+  master never crosses the wire at all.
+
+  Not ffmpeg.wasm, which this brief used to say: it is 64 MB unpacked for two
+  codecs out of several hundred. libFLAC compiled to wasm (~240 KB) and a
+  pure-JS MP3 encoder do the same job for about a hundredth of the download.
+  The WAV is parsed directly rather than decoded through Web Audio, which can
+  resample and returns floats — lossless has to mean the samples in the file.
 - **Like counts are real but not social.** Persisted server-side, idempotent per
   device. Nobody is shown who else liked anything.
 
