@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { Backdrop } from "@/chrome/Backdrop";
 import { KeyCap, PairedRule } from "@/ui/devices";
-import { getGateRecord, getUnlockedRecord } from "@/data/catalog";
+import { getAvailableFormats, getGateRecord, getUnlockedRecord } from "@/data/catalog";
 import { GateForm } from "./GateForm";
 import { Album } from "./Album";
 import styles from "../../screens.module.css";
@@ -29,7 +29,14 @@ export default async function RecordPage({
 
   // Returns null for a locked record and for one that does not exist alike.
   const record = await getUnlockedRecord(slug);
-  if (record) return <Album record={record} />;
+  if (record) {
+    /* Which tracks actually have a streamable encoding. Resolved here so the
+       list can show the difference between a track that is silent and one that
+       is simply not up yet, without the client asking. */
+    const formats = await getAvailableFormats(slug);
+    const playable = Object.keys(formats).filter((id) => formats[id].includes("flac"));
+    return <Album record={record} playable={playable} />;
+  }
 
   // Not unlocked. Drafts are invisible here too, so a 404 cannot be used to
   // discover that a draft exists.

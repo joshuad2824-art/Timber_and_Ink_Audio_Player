@@ -59,14 +59,30 @@ The prototype checks phrases in the browser and prints them on screen. In produc
   Every admin endpoint is authorized server-side. Remove the on-screen hints.
 - Audio is served from private storage behind short-lived signed URLs, not a public path.
 
+## Settled by the owner
+
+- **Masters are WAV**, uploaded through the desk. The design spec's `0.28 MB/s`
+  estimate is exactly 24-bit/48kHz stereo, so assume 24/48 unless told otherwise.
+- **Streaming is lossless — FLAC**, not WAV. FLAC decodes bit-identically and
+  costs 58% of the bytes, so raw WAV streaming is strictly worse for the same
+  result. ~10 MB/minute; a 42-minute album is ~422 MB per full play, all of it
+  through a function because Blobs has no signed URLs. That is a bandwidth bill,
+  not an engineering limit — roughly 240 album plays per 100 GB.
+- **Offline is FLAC, falling back to MP3.** A lossless album is ~422 MB and iOS
+  Safari will usually refuse or evict that. Desktop and Android keep lossless;
+  an iPhone quietly gets the MP3 rather than a bookmark that lies. The
+  `N of M tracks are on this device.` line reads the real Cache API either way.
+- **Downloads are MP3**, 320 kbps.
+- **Transcoding happens in the owner's browser.** The desk runs ffmpeg.wasm: a
+  dropped WAV is turned into FLAC and MP3 locally and only those upload, in
+  chunks. Netlify caps a function request body around 6 MB and a 42-minute WAV
+  is 727 MB, so the master must never cross the wire whole.
+- **Like counts are real but not social.** Persisted server-side, idempotent per
+  device. Nobody is shown who else liked anything.
+
 ## Open questions for the owner
 
 Ask before guessing:
 
-- Where do audio files live, and how big are they? Does the owner upload through the desk, or
-  drop files somewhere and have the desk pick them up?
 - Should a phrase ever expire, or be revocable per person rather than per record?
-- Are download links meant to ship, or were they only for the prototype? If they ship, MP3, WAV,
-  or both — and do they need to be gated separately from listening?
-- Are like counts real, and shared across listeners, or a private per-device gesture?
 - One owner forever, or will there be a second person at the desk?

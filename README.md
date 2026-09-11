@@ -59,15 +59,16 @@ build plan before writing code.
 
 ## Where this is
 
-Milestone 2 of six. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
+Milestone 3 of six. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
 
 - [x] **1 — Shell and tokens.** Ported tokens, the four background layers, the
       decorative devices, the type scale, route skeletons.
 - [x] **2 — Catalog and gate, for real.** Schema, seed, `/api/catalog`, the
       unlock endpoint with scrypt hashing and per-IP rate limiting, the
       per-record cookie, and the album screen behind it.
-- [ ] **3 — The player.** Audio storage, two elements, seek, shuffle, repeat,
-      volume, crossfade, Media Session.
+- [x] **3 — The player.** FLAC streaming behind the record cookie with byte
+      ranges, two audio elements, drag-seek, shuffle, the three repeat modes,
+      volume with persistence, linear crossfade, Media Session.
 - [ ] **4 — The desk.** Admin auth, record CRUD, reorder, upload, site text.
 - [ ] **5 — Offline.** Service worker, manifest, cache-per-track.
 - [ ] **6 — Hardening.** Rate limits, audit logging, a keyboard pass, Lighthouse
@@ -103,6 +104,26 @@ leak. Supporting that:
   record with no phrase, and a wrong phrase all answer identically, so the gate
   is not an oracle for what exists.
 
+## Audio
+
+The owner uploads WAV masters. The desk derives FLAC and MP3 from them in the
+browser (ffmpeg.wasm) and uploads only those — a Netlify function caps a request
+body around 6 MB and a 42-minute WAV is 727 MB, so the master never crosses the
+wire whole.
+
+- **Streaming is FLAC.** Lossless, and it decodes bit-identically to the master
+  at roughly half the bytes, so streaming raw WAV would cost 1.7x for the same
+  audio. The route refuses `format=wav` outright; the master is archival.
+- **Every byte goes through a function** that checks the record's unlock cookie.
+  Blobs has no signed URLs, so there is no CDN handoff — about 10 MB a minute,
+  or 240 album plays per 100 GB. That is the standing cost of the design.
+- **Range requests are load-bearing**, not an optimisation. Browsers ask for a
+  byte range when you drag the scrub bar; answering 200-with-everything would
+  make every seek refetch the whole track.
+- **Two audio elements**, because one cannot overlap the end of a track with the
+  start of the next. They swap roles on each advance; the idle one is where the
+  next track preloads and where a crossfade ramps up.
+
 ## Environment
 
 | Variable | Where | What |
@@ -110,6 +131,7 @@ leak. Supporting that:
 | `SHADOW_HARBOR_SECRET` | Netlify (set) | Signs unlock cookies. 32+ chars. Required in production. |
 | `NETLIFY_DATABASE_URL` | Netlify (automatic) | Provisioned by Netlify DB; nothing to configure. |
 | `DATABASE_URL` | local only | Points at a local Postgres for testing. |
+| `SHADOW_HARBOR_LOCAL_AUDIO` | local only | A directory to use instead of Netlify Blobs, so the audio path can be tested with real files. |
 
 To run the database locally:
 
