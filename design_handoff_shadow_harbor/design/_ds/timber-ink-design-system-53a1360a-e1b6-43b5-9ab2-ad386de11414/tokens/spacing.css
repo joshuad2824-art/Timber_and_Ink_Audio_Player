@@ -1,0 +1,40 @@
+/* Timber & Ink — spacing + layout.
+   Base unit 4px; editorial columns measured in characters, not pixels. */
+:root {
+  --space-0: 0;
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 20px;
+  --space-7: 24px;
+  --space-8: 32px;
+  --space-9: 40px;
+  --space-10: 48px;
+  --space-11: 64px;
+  --space-12: 80px;
+  --space-13: 104px;
+  --space-14: 136px;
+
+  /* component padding roles */
+  --pad-control-y: 10px;
+  --pad-control-x: 18px;
+  --pad-control-y-sm: 6px;
+  --pad-control-x-sm: 12px;
+  --pad-card: 24px;
+  --pad-card-lg: 32px;
+  --pad-section: 80px;
+
+  /* layout */
+  --measure-prose: 64ch;
+  --measure-narrow: 46ch;
+  --container-page: 1180px;
+  --container-reading: 720px;
+  --gutter-page: 32px;
+  --gutter-page-sm: 20px;
+  --grid-columns: 12; /* @kind other */
+  --grid-gap: 24px;
+  --header-height: 76px;
+  --tabbar-height: 62px;
+}

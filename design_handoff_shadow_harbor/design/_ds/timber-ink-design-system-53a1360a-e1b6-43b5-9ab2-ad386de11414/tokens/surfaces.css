@@ -1,0 +1,89 @@
+/* Timber & Ink — surfaces. v2.0, August 2026.
+   Retired: --wash-driftwood (driftwood family gone). --glow-lantern renamed
+   --glow-lamplight and rebuilt on AMBER — the glow tokens are the reason the
+   amber family exists. Nothing else in the system glows.
+   Image treatment warmed: the v1 values were tuned for damp coastal grey,
+   not lamplight.
+   ORIGINAL HEADER FOLLOWS.
+   Timber & Ink — surfaces: radii, borders, shadows, atmosphere, motion.
+   The brand is printed matter, but the light is a single lantern in a dark
+   wood. Shadows are near-black and deep; the only glow in the system is the
+   lamplight glow, and it is reserved for one lit element per view. */
+:root {
+  /* radii — printed matter is square-ish */
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-stamp: 999px;
+
+  /* borders */
+  --border-width-hair: 1px;
+  --border-width-rule: 2px;
+  --border-width-heavy: 3px;
+  --border-hair: 1px solid var(--border-hairline);
+  --border-solid: 1px solid var(--border-default);
+  --border-ink: 2px solid var(--border-strong);
+  --border-brass: 2px solid var(--rule-accent);
+  --rule-double: 3px double var(--border-default);
+
+  /* shadows — deep and near-black; the page absorbs light */
+  --shadow-none: none;
+  --shadow-press: inset 0 1px 0 rgba(0, 0, 0, 0.55);
+  --shadow-raise: 0 1px 0 rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0, 0, 0, 0.34);
+  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.34), 0 8px 24px rgba(0, 0, 0, 0.44);
+  --shadow-lift: 0 2px 0 rgba(0, 0, 0, 0.40), 0 18px 44px rgba(0, 0, 0, 0.56);
+  --shadow-plate: 3px 3px 0 var(--plate-offset); /* letterpress offset plate */
+  --shadow-plate-brass: 3px 3px 0 var(--brass-600);
+  --control-inset: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+  --focus-glow: 0 0 0 3px rgba(222, 157, 75, 0.28);
+  --focus-ring-shadow: 0 0 0 2px var(--surface-page), 0 0 0 4px var(--focus-ring);
+
+  /* lamplight glow — one lit element per view, nothing else glows */
+  --glow-lamplight: 0 0 0 1px rgba(222, 157, 75, 0.26), 0 0 28px rgba(198, 134, 47, 0.30), 0 12px 40px rgba(0, 0, 0, 0.52);
+  --glow-soft: 0 0 44px rgba(198, 134, 47, 0.18);
+
+  /* atmosphere: fog, overcast, lamplight, rain, vignette */
+  --grain-opacity: 0.07; /* @kind other */
+  --fog-veil: linear-gradient(180deg, rgba(233, 230, 223, 0) 0%, rgba(233, 230, 223, 0.86) 62%, var(--cream-200) 100%); /* @kind other */
+  --fog-veil-dark: linear-gradient(180deg, rgba(20, 42, 43, 0) 0%, rgba(20, 42, 43, 0.90) 62%, var(--teal-800) 100%); /* @kind other */
+  --protection-scrim: linear-gradient(180deg, rgba(0, 16, 17, 0.78) 0%, rgba(0, 16, 17, 0.18) 52%, rgba(0, 16, 17, 0.86) 100%); /* @kind other */
+  --vignette: radial-gradient(122% 92% at 50% 42%, rgba(0, 16, 17, 0) 38%, rgba(0, 16, 17, 0.58) 100%); /* @kind other */
+  --wash-forest: linear-gradient(165deg, var(--teal-900) 0%, var(--teal-950) 100%); /* @kind other */
+  --wash-overcast: linear-gradient(180deg, var(--teal-700) 0%, var(--teal-900) 100%); /* @kind other */
+  --wash-lantern: radial-gradient(circle at 50% 58%, rgba(241, 186, 122, 0.24) 0%, rgba(198, 134, 47, 0.08) 42%, rgba(0, 16, 17, 0) 68%); /* @kind other */
+  --rain-streaks: repeating-linear-gradient(101deg, rgba(246, 243, 236, 0) 0 7px, rgba(246, 243, 236, 0.045) 7px 8px); /* @kind other */
+  --blur-glass: saturate(105%) blur(10px); /* @kind other */
+  --image-treatment: saturate(0.78) contrast(1.05) brightness(0.92); /* @kind other */
+
+  /* motion — slow, weighted, no bounce */
+  --ease-standard: cubic-bezier(0.32, 0.08, 0.24, 1); /* @kind other */
+  --ease-out: cubic-bezier(0.16, 0.84, 0.34, 1); /* @kind other */
+  --ease-in: cubic-bezier(0.5, 0, 0.9, 0.4); /* @kind other */
+  --duration-instant: 90ms; /* @kind other */
+  --duration-fast: 150ms; /* @kind other */
+  --duration-base: 240ms; /* @kind other */
+  --duration-slow: 420ms; /* @kind other */
+  --duration-fog: 900ms; /* @kind other */
+  --transition-control: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard), transform var(--duration-instant) var(--ease-standard); /* @kind other */
+
+  /* z-index */
+  --z-base: 0; /* @kind other */
+  --z-raised: 10; /* @kind other */
+  --z-sticky: 100; /* @kind other */
+  --z-overlay: 800; /* @kind other */
+  --z-modal: 900; /* @kind other */
+  --z-toast: 1000; /* @kind other */
+}
+/* On paper stock the shadows soften back to warm printed-matter values. */
+[data-stock="paper"] {
+  --shadow-press: inset 0 1px 0 rgba(20, 42, 43, 0.18);
+  --shadow-raise: 0 1px 0 rgba(20, 42, 43, 0.10), 0 2px 6px rgba(20, 42, 43, 0.07);
+  --shadow-card: 0 1px 0 rgba(20, 42, 43, 0.08), 0 6px 18px rgba(20, 42, 43, 0.10);
+  --shadow-lift: 0 2px 0 rgba(20, 42, 43, 0.10), 0 14px 32px rgba(20, 42, 43, 0.16);
+  --shadow-plate-brass: 3px 3px 0 var(--brass-700);
+  --control-inset: inset 0 1px 2px rgba(20, 42, 43, 0.06);
+  --focus-glow: 0 0 0 3px rgba(143, 83, 0, 0.22);
+  --image-treatment: saturate(0.86) contrast(1.03) brightness(0.99); /* @kind other */
+}

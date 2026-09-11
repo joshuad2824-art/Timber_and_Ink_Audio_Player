@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/timber-ink-design-system-53a1360a-e1b6-43b5-9ab2-ad386de11414/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/timber-ink-design-system-53a1360a-e1b6-43b5-9ab2-ad386de11414/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/timber-ink-design-system-53a1360a-e1b6-43b5-9ab2-ad386de11414/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/timber-ink-design-system-53a1360a-e1b6-43b5-9ab2-ad386de11414/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/timber-ink-design-system-53a1360a-e1b6-43b5-9ab2-ad386de11414/tokens/surfaces.css">
+  <link rel="stylesheet" href="_ds/timber-ink-design-system-53a1360a-e1b6-43b5-9ab2-ad386de11414/tokens/base.css">
+  <link rel="stylesheet" href="_ds/timber-ink-design-system-53a1360a-e1b6-43b5-9ab2-ad386de11414/styles.css">
+  <script src="_ds/timber-ink-design-system-53a1360a-e1b6-43b5-9ab2-ad386de11414/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@0.451.0/dist/umd/lucide.min.js"></script>
+  <script src="./image-slot.js"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grape+Nuts&amp;display=swap">
+  <style>
+    html, body { margin: 0; padding: 0; background: #08100F; }
+    :root { --font-hand: "Grape Nuts", "Bradley Hand", cursive; }
+    * { box-sizing: border-box; }
+    a { color: #AE9546; text-decoration: none; }
+    a:hover { color: #DAC891; }
+    input[type="range"] { accent-color: #E8E3D7; }
+  </style>
+</helmet>
+
+<div data-screen-label="Recordings" style="min-height:100vh;background:#0B1819;color:#E8E3D7;font-family:var(--font-body);position:relative;overflow-x:hidden">
+
+  <sc-if value="{{ lamplight }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(880px 1040px at 6% 220px, rgba(198,134,47,0.115), rgba(0,0,0,0) 68%),radial-gradient(70% 44% at 18% 88%, rgba(198,134,47,0.1), rgba(0,0,0,0) 72%),radial-gradient(46% 30% at 84% 4%, rgba(120,150,140,0.055), rgba(0,0,0,0) 74%)"></div>
+  </sc-if>
+  <sc-if value="{{ wear }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;pointer-events:none;opacity:0.62;background-image:url('textures/desk-wear.png');background-size:100% 100%;background-repeat:no-repeat"></div>
+  </sc-if>
+  <div style="position:absolute;inset:0;pointer-events:none;opacity:0.3;background-image:url('textures/desk-grain.png');background-size:256px 256px;background-repeat:repeat"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(122% 88% at 50% 40%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.46) 100%)"></div>
+
+  <sc-if value="{{ showAdminBar }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative;z-index:12;background:#0A1617;border-bottom:2px solid #AE9546;box-shadow:0 10px 24px rgba(0,0,0,0.45)">
+      <div style="max-width:min(1080px,100%);margin:0 auto;padding:9px clamp(20px,4vw,34px);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#C5AE67">Signed in as admin</span>
+        <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#9DABA6">{{ adminBarNote }}</span>
+        <div style="display:flex;align-items:center;gap:16px;margin-left:auto">
+          <button type="button" onClick="{{ toDeskFromBar }}" style="min-height:36px;padding:0;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#AE9546" style-hover="color:#DAC891">The desk</button>
+          <button type="button" onClick="{{ signOut }}" style="min-height:36px;padding:0;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ viewRoster }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="Catalog" style="position:relative;z-index:3;max-width:min(940px,100%);margin:0 auto;padding:56px clamp(20px,4vw,34px) 48px">
+    <div style="display:inline-block;transform:rotate(-1.2deg);padding:7px 15px;border-radius:3px;background:linear-gradient(180deg,#e8e3d2 0%,#d6d0bc 55%,#cbc4ae 100%);color:#1d2a28;font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:0.26em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),inset 0 -1px 0 rgba(0,0,0,0.22),0 3px 9px rgba(0,0,0,0.48);text-shadow:0 1px 0 rgba(255,255,255,0.55)">{{ siteEyebrow }}</div>
+    <h1 style="margin:16px 0 0;font-family:var(--font-display);font-weight:400;font-size:clamp(34px,10vw,50px);line-height:0.98;letter-spacing:-0.01em;text-transform:uppercase;color:#F4F0E6;text-wrap:pretty">{{ siteTitle }}</h1>
+    <div style="margin-top:18px;height:2px;background:#E8E3D7"></div>
+    <div style="margin-top:3px;height:1px;background:rgba(232,227,215,0.34)"></div>
+    <p style="margin:20px 0 0;max-width:30ch;font-family:var(--font-hand);font-size:clamp(22px,6vw,26px);line-height:1.34;color:#D8D2C4;text-wrap:pretty">{{ siteIntro }}</p>
+
+    <div style="margin-top:34px;border-bottom:1px solid rgba(232,227,215,0.14)">
+      <sc-for list="{{ roster }}" as="a" hint-placeholder-count="3">
+        <div role="button" tabIndex="{{ a.tab }}" onClick="{{ a.onOpen }}" onKeyDown="{{ a.onKey }}" style="display:flex;align-items:center;gap:16px;padding:20px 8px;border-top:1px solid rgba(232,227,215,0.14);cursor:pointer" style-hover="background:rgba(232,227,215,0.04)">
+          <div style="flex:1 1 auto;min-width:0">
+            <div style="font-family:var(--font-signage);font-size:15px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:#F1EDE2">{{ a.name }}</div>
+            <div style="margin-top:7px;font-family:var(--font-editorial);font-size:20px;line-height:1.24;color:#C3CBC6;text-wrap:pretty">{{ a.album }}</div>
+            <div style="margin-top:9px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.11em;text-transform:uppercase;color:#9DABA6">{{ a.meta }}</div>
+          </div>
+          <div style="flex:0 0 auto;display:flex;align-items:center;gap:12px;color:#9DABA6">
+            <span style="transform:rotate(-1.4deg);display:inline-block;padding:5px 11px;border-radius:3px;background:linear-gradient(180deg,#31403d 0%,#1e2a28 55%,#182220 100%);color:{{ a.stateColor }};font-family:var(--font-ui);font-size:9px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,0.16),inset 0 -1px 0 rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.4);text-shadow:0 -1px 0 rgba(0,0,0,0.5);white-space:nowrap">{{ a.state }}</span>
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="chevron-right" size="{{ sz18 }}" hint-size="18px,18px"></x-import>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ rosterEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:28px;font-family:var(--font-mono);font-size:12px;letter-spacing:0.06em;color:#9DABA6">Nothing here yet. Plenty of time.</div>
+    </sc-if>
+
+    <div style="margin-top:40px;padding-top:18px;border-top:1px solid rgba(232,227,215,0.12);font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6">{{ footerLine }}</div>
+
+    <div style="margin-top:18px;display:flex;justify-content:center">
+      <button type="button" onClick="{{ toAdminDoor }}" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 4px;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#DAC891">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="lock" size="{{ sz14 }}" hint-size="14px,14px"></x-import>
+        {{ doorLabel }}
+      </button>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ viewGate }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Gate" style="position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 24px">
+    <div style="width:100%;max-width:400px">
+      <button type="button" onClick="{{ toRoster }}" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="arrow-left" size="{{ sz16 }}" hint-size="16px,16px"></x-import>
+        All recordings
+      </button>
+      <div style="margin-top:18px;display:inline-block;transform:rotate(-1.2deg);padding:7px 15px;border-radius:3px;background:linear-gradient(180deg,#e8e3d2 0%,#d6d0bc 55%,#cbc4ae 100%);color:#1d2a28;font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:0.26em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),inset 0 -1px 0 rgba(0,0,0,0.22),0 3px 9px rgba(0,0,0,0.48);text-shadow:0 1px 0 rgba(255,255,255,0.55)">By invitation</div>
+      <h1 style="margin:16px 0 0;font-family:var(--font-display);font-weight:400;font-size:clamp(32px,10vw,48px);line-height:0.98;letter-spacing:-0.01em;text-transform:uppercase;color:#F4F0E6;text-wrap:pretty">{{ artistName }}</h1>
+      <div style="margin-top:18px;height:2px;background:#E8E3D7"></div>
+      <div style="margin-top:3px;height:1px;background:rgba(232,227,215,0.34)"></div>
+      <p style="margin:20px 0 0;max-width:28ch;font-family:var(--font-hand);font-size:clamp(22px,6vw,26px);line-height:1.34;color:#D8D2C4;text-wrap:pretty">{{ gateLine }}</p>
+
+      <div style="margin-top:30px;position:relative;transform:rotate(-0.7deg)">
+        <div data-stock="paper" style="position:relative;background:#f6f3ec;padding:clamp(22px,6vw,28px);box-shadow:0 26px 54px rgba(0,0,0,0.52)">
+          <div style="font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#2c3f3e">The phrase</div>
+          <div style="margin-top:10px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" placeholder="the phrase" value="{{ phrase }}" onChange="{{ onPhrase }}" onKeyDown="{{ onPhraseKey }}" aria-label="Access phrase" hint-size="100%,44px"></x-import>
+          </div>
+          <div style="margin-top:9px;min-height:19px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;color:#9A4B2C">{{ nudge }}</div>
+          <div style="margin-top:8px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Button" size="lg" fullWidth="{{ true }}" onClick="{{ tryEnter }}" hint-size="100%,48px">Come in</x-import>
+          </div>
+          <sc-if value="{{ showHint }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:14px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;color:#4A5B58">{{ hintLine }}</div>
+          </sc-if>
+        </div>
+        <sc-if value="{{ tape }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;top:-14px;left:-16px;width:112px;height:29px;transform:rotate(-17deg);background:repeating-linear-gradient(90deg,rgba(42,46,40,0.5) 0 1px,rgba(0,0,0,0) 1px 7px),repeating-linear-gradient(0deg,rgba(42,46,40,0.5) 0 1px,rgba(0,0,0,0) 1px 7px),linear-gradient(178deg,rgba(226,219,198,0.94),rgba(203,195,170,0.9));box-shadow:0 3px 8px rgba(0,0,0,0.42)"></div>
+        </sc-if>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ viewAlbum }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Album" style="position:relative;z-index:3;max-width:min(880px,100%);margin:0 auto;padding:0 clamp(20px,4vw,34px) 168px">
+
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0 20px">
+      <button type="button" onClick="{{ toRoster }}" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="arrow-left" size="{{ sz16 }}" hint-size="16px,16px"></x-import>
+        All recordings
+      </button>
+      <button type="button" onClick="{{ lock }}" style="min-height:44px;padding:0 2px;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">Lock it back</button>
+    </header>
+
+    <div style="font-family:var(--font-signage);font-size:15px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:#F1EDE2">{{ artistName }}</div>
+
+    <div style="margin-top:22px;position:relative;width:min(100%,420px);transform:rotate(-1.3deg)">
+      <div style="background:#fffdf6;padding:15px 15px 20px;box-shadow:0 26px 52px rgba(0,0,0,0.5),0 3px 0 rgba(0,0,0,0.3)">
+        <div style="position:relative;width:100%;aspect-ratio:1 / 1">
+          <sc-for list="{{ coverSlots }}" as="c" hint-placeholder-count="1">
+            <image-slot id="cover-{{ c.id }}" shape="rect" fit="cover" placeholder="Drop the cover art"></image-slot>
+          </sc-for>
+        </div>
+        <div style="margin-top:13px;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap">
+          <div style="font-family:var(--font-signage);font-size:13px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:#142A2B">{{ artistName }}</div>
+          <div style="display:inline-block;padding:5px 11px;border-radius:3px;background:linear-gradient(180deg,#31403d 0%,#1e2a28 55%,#182220 100%);color:#eef0e8;font-family:var(--font-ui);font-size:9px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,0.16),inset 0 -1px 0 rgba(0,0,0,0.55),0 2px 6px rgba(20,42,43,0.3);text-shadow:0 -1px 0 rgba(0,0,0,0.5);white-space:nowrap">{{ albumYear }}</div>
+        </div>
+      </div>
+      <sc-if value="{{ tape }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;top:-13px;left:-16px;width:126px;height:32px;transform:rotate(-21deg);background:repeating-linear-gradient(90deg,rgba(38,42,30,0.5) 0 1px,rgba(0,0,0,0) 1px 8px),repeating-linear-gradient(0deg,rgba(38,42,30,0.5) 0 1px,rgba(0,0,0,0) 1px 8px),linear-gradient(178deg,rgba(150,143,104,0.94),rgba(126,120,85,0.9));box-shadow:0 3px 8px rgba(0,0,0,0.42)"></div>
+        <div style="position:absolute;bottom:-11px;right:-14px;width:112px;height:29px;transform:rotate(-9deg);background:repeating-linear-gradient(90deg,rgba(42,46,40,0.5) 0 1px,rgba(0,0,0,0) 1px 7px),repeating-linear-gradient(0deg,rgba(42,46,40,0.5) 0 1px,rgba(0,0,0,0) 1px 7px),linear-gradient(178deg,rgba(226,219,198,0.94),rgba(203,195,170,0.9));box-shadow:0 3px 8px rgba(0,0,0,0.42)"></div>
+      </sc-if>
+    </div>
+
+    <h1 style="margin:34px 0 0;font-family:var(--font-editorial);font-weight:700;font-size:clamp(30px,8.4vw,42px);line-height:1.04;color:#F4F0E6;text-wrap:pretty">{{ albumTitle }}</h1>
+    <div style="margin-top:12px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.13em;text-transform:uppercase;color:#9DABA6">{{ albumMeta }}</div>
+
+    <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
+      <button type="button" onClick="{{ toggleLike }}" aria-pressed="{{ liked }}" aria-label="{{ likeLabel }}" title="{{ likeLabel }}" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(232,227,215,0.18);border-radius:3px;background:transparent;cursor:pointer;color:{{ likeColor }}" style-hover="background:rgba(232,227,215,0.07)">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="heart" size="{{ sz18 }}" hint-size="18px,18px"></x-import>
+      </button>
+      <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:#9DABA6">{{ likeLine }}</div>
+    </div>
+
+    <p style="margin:24px 0 0;max-width:34ch;font-family:var(--font-hand);font-size:clamp(23px,6vw,27px);line-height:1.32;color:#D8D2C4;text-wrap:pretty">{{ albumIntro }}</p>
+
+    <div style="margin-top:26px;padding:16px 0;border-top:1px solid rgba(232,227,215,0.12);border-bottom:1px solid rgba(232,227,215,0.12);display:flex;align-items:center;justify-content:space-between;gap:18px">
+      <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Button" size="sm" onClick="{{ toggleInstall }}" hint-size="auto,34px" style="color: var(--surface-inverse)">Keep it on your device</x-import><div style="display:flex;align-items:center;gap:12px;margin-left:auto">
+        <span style="font-family:var(--font-ui);font-size:13px;font-weight:600;color:#E8E3D7">Crossfade</span>
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Switch" checked="{{ crossfade }}" onChange="{{ setCrossfade }}" aria-label="Crossfade between tracks" hint-size="44px,24px"></x-import>
+      </div>
+    </div>
+
+    <div style="margin-top:30px;height:2px;background:rgba(232,227,215,0.28)"></div>
+    <div style="margin-top:3px;height:1px;background:rgba(232,227,215,0.16)"></div>
+
+    <div style="margin-top:26px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="font-family:var(--font-signage);font-size:14px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">The tracks</div>
+    </div>
+
+    <sc-if value="{{ installOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;padding:18px;background:#0D1C1D;border:1px solid rgba(232,227,215,0.12);border-radius:5px">
+        <div style="font-family:var(--font-ui);font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#C5AE67">Listening offline</div>
+        <p style="margin:10px 0 0;font-size:15px;line-height:1.6;color:#C3CBC6">Open the share menu and choose <em>Add to home screen</em>. It opens like an app after that, and every track you've kept plays without a signal.</p>
+        <div style="margin-top:12px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;color:#9DABA6">{{ savedNote }}</div>
+      </div>
+    </sc-if>
+
+    <div style="margin-top:12px;border-bottom:1px solid rgba(232,227,215,0.1)">
+      <sc-for list="{{ tracks }}" as="t" hint-placeholder-count="10">
+        <div style="display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 12px 10px 14px;border-top:1px solid rgba(232,227,215,0.1);background:{{ t.rowBg }};box-shadow:{{ t.marker }}">
+          <div role="button" tabIndex="{{ t.tab }}" onClick="{{ t.onPlay }}" onKeyDown="{{ t.onKey }}" style="flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:14px;cursor:pointer">
+            <div style="width:22px;flex:0 0 auto;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:{{ t.numColor }}">{{ t.num }}</div>
+            <div style="flex:1 1 auto;min-width:0;font-family:var(--font-editorial);font-size:18px;line-height:1.24;color:{{ t.titleColor }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.title }}</div>
+            <div style="flex:0 0 auto;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:#9DABA6">{{ t.dur }}</div>
+          </div>
+          <button type="button" onClick="{{ t.onSave }}" aria-label="{{ t.saveLabel }}" title="{{ t.saveLabel }}" style="flex:0 0 auto;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;cursor:pointer;color:{{ t.saveColor }}" style-hover="background:rgba(232,227,215,0.07)">
+            <sc-if value="{{ t.saved }}" hint-placeholder-val="{{ false }}">
+              <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="bookmark-check" size="{{ sz18 }}" hint-size="18px,18px"></x-import>
+            </sc-if>
+            <sc-if value="{{ t.notSaved }}" hint-placeholder-val="{{ true }}">
+              <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="bookmark" size="{{ sz18 }}" hint-size="18px,18px"></x-import>
+            </sc-if>
+          </button>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ audioMissing }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;font-family:var(--font-mono);font-size:11px;line-height:1.5;letter-spacing:0.04em;color:#9DABA6">{{ missingNote }}</div>
+    </sc-if>
+
+    <div style="margin-top:24px">
+      <button type="button" onClick="{{ toggleFiles }}" style="min-height:44px;padding:0;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#AE9546" style-hover="color:#DAC891">{{ filesLabel }}</button>
+    </div>
+
+    <sc-if value="{{ filesOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:4px 0 6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button type="button" onClick="{{ setMp3 }}" style="min-height:34px;padding:0 14px;border:1px solid rgba(232,227,215,0.2);border-radius:3px;cursor:pointer;font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;background:{{ mp3Bg }};color:{{ mp3Fg }}">MP3</button>
+          <button type="button" onClick="{{ setWav }}" style="min-height:34px;padding:0 14px;border:1px solid rgba(232,227,215,0.2);border-radius:3px;cursor:pointer;font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;background:{{ wavBg }};color:{{ wavFg }}">WAV</button>
+        </div>
+        <button type="button" onClick="{{ downloadAlbum }}" style="margin-top:12px;width:100%;min-height:40px;padding:0;border:0;border-bottom:1px solid rgba(232,227,215,0.12);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:#C3CBC6" style-hover="color:#F1EDE2">{{ albumFileNote }}</button>
+        <sc-for list="{{ fileRows }}" as="r" hint-placeholder-count="10">
+          <button type="button" onClick="{{ r.onClick }}" style="width:100%;min-height:38px;padding:0;border:0;border-bottom:1px solid rgba(232,227,215,0.08);background:transparent;cursor:pointer;display:flex;align-items:center;gap:12px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:#9DABA6" style-hover="color:#F1EDE2">
+            <span style="flex:0 0 auto;width:22px;text-align:left">{{ r.num }}</span>
+            <span style="flex:1 1 auto;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.title }}</span>
+            <span style="flex:0 0 auto">{{ r.size }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <div style="margin-top:16px;min-height:26px;font-family:var(--font-hand);font-size:21px;line-height:1.2;color:#D9A354">{{ toast }}</div>
+
+    <div style="margin-top:40px;padding-top:18px;border-top:1px solid rgba(232,227,215,0.12);font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6">{{ albumFooter }}</div>
+  </section>
+
+  <div style="position:fixed;left:0;right:0;bottom:0;z-index:20;background:#0A1617;border-top:2px solid #AE9546;box-shadow:0 -18px 40px rgba(0,0,0,0.6);padding-bottom:env(safe-area-inset-bottom)">
+    <div style="max-width:min(880px,100%);margin:0 auto;padding:0 clamp(0px,1vw,14px)">
+      <div onPointerDown="{{ onBarDown }}" onPointerMove="{{ onBarMove }}" onPointerUp="{{ onBarUp }}" ref="{{ barRef }}" style="padding:9px 16px;cursor:pointer;touch-action:none">
+        <div style="position:relative;height:4px;background:rgba(232,227,215,0.16);border-radius:2px">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:{{ pct }};background:#E8E3D7;border-radius:2px"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:0 16px">
+        <div style="flex:1 1 auto;min-width:0;font-family:var(--font-editorial);font-size:16px;line-height:1.3;color:#F1EDE2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ nowTitle }}</div>
+        <div style="flex:0 0 auto;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:#9DABA6">{{ timeLine }}</div>
+      </div>
+      <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 12px 14px">
+        <button type="button" onClick="{{ toggleShuffle }}" aria-label="Shuffle" title="Shuffle" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;cursor:pointer;color:{{ shuffleColor }}" style-hover="background:rgba(232,227,215,0.07)">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="shuffle" size="{{ sz20 }}" hint-size="20px,20px"></x-import>
+        </button>
+        <button type="button" onClick="{{ prev }}" aria-label="Previous track" title="Previous track" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;cursor:pointer;color:#E8E3D7" style-hover="background:rgba(232,227,215,0.07)">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="skip-back" size="{{ sz22 }}" hint-size="22px,22px"></x-import>
+        </button>
+        <button type="button" onClick="{{ togglePlay }}" aria-label="{{ playLabel }}" title="{{ playLabel }}" style="width:56px;height:56px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border:2px solid #8F5300;border-radius:3px;background:#C6862F;color:#0B1011;cursor:pointer;box-shadow:0 0 24px rgba(198,134,47,0.42)" style-hover="background:#DE9D4B">
+          <sc-if value="{{ playing }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="pause" size="{{ sz24 }}" hint-size="24px,24px"></x-import>
+          </sc-if>
+          <sc-if value="{{ paused }}" hint-placeholder-val="{{ true }}">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="play" size="{{ sz24 }}" hint-size="24px,24px"></x-import>
+          </sc-if>
+        </button>
+        <button type="button" onClick="{{ next }}" aria-label="Next track" title="Next track" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;cursor:pointer;color:#E8E3D7" style-hover="background:rgba(232,227,215,0.07)">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="skip-forward" size="{{ sz22 }}" hint-size="22px,22px"></x-import>
+        </button>
+        <button type="button" onClick="{{ cycleRepeat }}" aria-label="{{ repeatLabel }}" title="{{ repeatLabel }}" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;cursor:pointer;color:{{ repeatColor }}" style-hover="background:rgba(232,227,215,0.07)">
+          <sc-if value="{{ repeatOne }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="repeat-1" size="{{ sz20 }}" hint-size="20px,20px"></x-import>
+          </sc-if>
+          <sc-if value="{{ notRepeatOne }}" hint-placeholder-val="{{ true }}">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="repeat" size="{{ sz20 }}" hint-size="20px,20px"></x-import>
+          </sc-if>
+        </button>
+        <button type="button" onClick="{{ toggleVol }}" aria-label="Volume" title="Volume" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;cursor:pointer;color:#E8E3D7" style-hover="background:rgba(232,227,215,0.07)">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="volume-2" size="{{ sz20 }}" hint-size="20px,20px"></x-import>
+        </button>
+        <sc-if value="{{ volOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;right:10px;bottom:66px;display:flex;align-items:center;gap:10px;padding:12px 14px;background:#0D1C1D;border:1px solid rgba(232,227,215,0.22);border-radius:3px;box-shadow:0 18px 36px rgba(0,0,0,0.55)">
+            <input type="range" min="0" max="1" step="0.01" value="{{ vol }}" onChange="{{ onVol }}" aria-label="Volume level" style="width:132px">
+            <span style="font-family:var(--font-mono);font-size:11px;color:#9DABA6;min-width:34px;text-align:right">{{ volPct }}</span>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ viewAdminLogin }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Admin sign in" style="position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 24px">
+    <div style="width:100%;max-width:380px">
+      <button type="button" onClick="{{ toRoster }}" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="arrow-left" size="{{ sz16 }}" hint-size="16px,16px"></x-import>
+        Back to the site
+      </button>
+      <div style="margin-top:18px;display:inline-block;transform:rotate(-1.2deg);padding:7px 15px;border-radius:3px;background:linear-gradient(180deg,#e8e3d2 0%,#d6d0bc 55%,#cbc4ae 100%);color:#1d2a28;font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:0.26em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),inset 0 -1px 0 rgba(0,0,0,0.22),0 3px 9px rgba(0,0,0,0.48);text-shadow:0 1px 0 rgba(255,255,255,0.55)">Behind the counter</div>
+      <h1 style="margin:16px 0 0;font-family:var(--font-editorial);font-weight:700;font-size:clamp(30px,8vw,40px);line-height:1.04;color:#F4F0E6">Sign in</h1>
+      <div style="margin-top:18px;height:2px;background:#E8E3D7"></div>
+      <div style="margin-top:3px;height:1px;background:rgba(232,227,215,0.34)"></div>
+      <p style="margin:20px 0 0;max-width:28ch;font-family:var(--font-hand);font-size:clamp(22px,6vw,26px);line-height:1.34;color:#D8D2C4;text-wrap:pretty">This is the room where the records get made ready. It's yours, so it's the only door with a key.</p>
+
+      <div style="margin-top:28px;position:relative;transform:rotate(0.8deg)">
+        <div data-stock="paper" style="position:relative;background:#f6f3ec;padding:clamp(22px,6vw,28px);box-shadow:0 26px 54px rgba(0,0,0,0.52)">
+          <div style="font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#2c3f3e">The key</div>
+          <div style="margin-top:10px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" type="password" placeholder="the key" value="{{ adminPass }}" onChange="{{ onAdminPass }}" onKeyDown="{{ onAdminKeyDown }}" aria-label="Admin key" hint-size="100%,44px"></x-import>
+          </div>
+          <div style="margin-top:9px;min-height:19px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;color:#9A4B2C">{{ adminNudge }}</div>
+          <div style="margin-top:8px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Button" size="lg" fullWidth="{{ true }}" onClick="{{ tryAdmin }}" hint-size="100%,48px">Come in</x-import>
+          </div>
+          <sc-if value="{{ showHint }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:14px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;color:#4A5B58">{{ adminHintLine }}</div>
+          </sc-if>
+        </div>
+        <sc-if value="{{ tape }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;top:-13px;right:22px;width:100px;height:27px;transform:rotate(9deg);background:repeating-linear-gradient(90deg,rgba(38,42,30,0.5) 0 1px,rgba(0,0,0,0) 1px 8px),repeating-linear-gradient(0deg,rgba(38,42,30,0.5) 0 1px,rgba(0,0,0,0) 1px 8px),linear-gradient(178deg,rgba(150,143,104,0.94),rgba(126,120,85,0.9));box-shadow:0 3px 8px rgba(0,0,0,0.42)"></div>
+        </sc-if>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ viewDesk }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Admin desk" style="position:relative;z-index:3;max-width:min(1080px,100%);margin:0 auto;padding:26px clamp(20px,4vw,34px) 90px">
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <button type="button" onClick="{{ toRoster }}" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="arrow-left" size="{{ sz16 }}" hint-size="16px,16px"></x-import>
+        Back to the site
+      </button>
+      <button type="button" onClick="{{ signOut }}" style="min-height:44px;padding:0 2px;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">Sign out</button>
+    </header>
+
+    <div style="margin-top:12px;display:inline-block;transform:rotate(-1.1deg);padding:7px 15px;border-radius:3px;background:linear-gradient(180deg,#e8e3d2 0%,#d6d0bc 55%,#cbc4ae 100%);color:#1d2a28;font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:0.26em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),inset 0 -1px 0 rgba(0,0,0,0.22),0 3px 9px rgba(0,0,0,0.48);text-shadow:0 1px 0 rgba(255,255,255,0.55)">Behind the counter</div>
+    <h1 style="margin:14px 0 0;font-family:var(--font-display);font-weight:400;font-size:clamp(30px,8vw,44px);line-height:1;letter-spacing:-0.01em;text-transform:uppercase;color:#F4F0E6">The desk</h1>
+    <div style="margin-top:16px;height:2px;background:#E8E3D7"></div>
+    <div style="margin-top:3px;height:1px;background:rgba(232,227,215,0.34)"></div>
+    <p style="margin:18px 0 0;max-width:34ch;font-family:var(--font-hand);font-size:clamp(22px,5vw,26px);line-height:1.34;color:#D8D2C4;text-wrap:pretty">Everything the site shows comes from here. Drafts stay between us until you publish them.</p>
+
+    <div style="margin-top:28px;display:flex;gap:22px;border-bottom:1px solid rgba(232,227,215,0.14)">
+      <button type="button" onClick="{{ showCatalogTab }}" style="min-height:44px;padding:0 0 10px;border:0;border-bottom:{{ tabCatalogRule }};background:transparent;cursor:pointer;font-family:var(--font-signage);font-size:14px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:{{ tabCatalogColor }}">The catalog</button>
+      <button type="button" onClick="{{ showTextTab }}" style="min-height:44px;padding:0 0 10px;border:0;border-bottom:{{ tabTextRule }};background:transparent;cursor:pointer;font-family:var(--font-signage);font-size:14px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:{{ tabTextColor }}">Site text</button>
+    </div>
+
+    <sc-if value="{{ tabCatalog }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top:20px;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.11em;text-transform:uppercase;color:#9DABA6">{{ deskCount }}</div>
+        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:#9DABA6">In the order they appear</div>
+      </div>
+
+      <sc-for list="{{ adminArtists }}" as="a" hint-placeholder-count="3">
+        <div style="margin-top:14px;padding:16px;background:#0D1C1D;border:1px solid rgba(232,227,215,0.12);border-radius:5px;transition:transform 240ms var(--ease-out),box-shadow 240ms var(--ease-out)" style-hover="transform:translateY(-2px);box-shadow:0 18px 34px rgba(0,0,0,0.5)">
+          <div style="display:flex;align-items:flex-start;gap:14px">
+            <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:4px">
+              <button type="button" onClick="{{ a.onUp }}" disabled="{{ a.isFirst }}" aria-label="Move up" title="Move up" style="width:34px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(232,227,215,0.16);border-radius:3px;background:transparent;cursor:pointer;color:{{ a.upColor }}" style-hover="background:rgba(232,227,215,0.07)">
+                <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="chevron-up" size="{{ sz16 }}" hint-size="16px,16px"></x-import>
+              </button>
+              <button type="button" onClick="{{ a.onDown }}" disabled="{{ a.isLast }}" aria-label="Move down" title="Move down" style="width:34px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(232,227,215,0.16);border-radius:3px;background:transparent;cursor:pointer;color:{{ a.downColor }}" style-hover="background:rgba(232,227,215,0.07)">
+                <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="chevron-down" size="{{ sz16 }}" hint-size="16px,16px"></x-import>
+              </button>
+            </div>
+            <div style="flex:1 1 auto;min-width:0">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div style="font-family:var(--font-signage);font-size:14px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:#F1EDE2">{{ a.name }}</div>
+                <span style="padding:3px 8px;border:1px solid {{ a.badgeBorder }};border-radius:2px;font-family:var(--font-ui);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:{{ a.badgeColor }}">{{ a.badge }}</span>
+              </div>
+              <div style="margin-top:7px;font-family:var(--font-editorial);font-size:19px;line-height:1.24;color:#C3CBC6;text-wrap:pretty">{{ a.album }}</div>
+              <div style="margin-top:8px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#9DABA6">{{ a.meta }}</div>
+              <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Phrase</span>
+                <div style="flex:1 1 180px;min-width:150px;max-width:280px">
+                  <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ a.phrase }}" onChange="{{ a.setPhrase }}" placeholder="none yet" aria-label="{{ a.phraseLabel }}" hint-size="100%,40px"></x-import>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding-top:13px;border-top:1px solid rgba(232,227,215,0.1);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Button" size="sm" onClick="{{ a.onEdit }}" hint-size="auto,32px">Open it</x-import>
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Button" size="sm" variant="secondary" onClick="{{ a.onPublish }}" hint-size="auto,32px">{{ a.publishLabel }}</x-import>
+            <div style="display:flex;align-items:center;gap:9px;margin-left:auto">
+              <span style="font-family:var(--font-ui);font-size:12px;font-weight:600;color:#C3CBC6">Listed</span>
+              <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Switch" checked="{{ a.enabled }}" onChange="{{ a.setEnabled }}" aria-label="{{ a.listedLabel }}" hint-size="44px,24px"></x-import>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+
+      <div style="margin-top:20px">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Button" size="md" variant="secondary" onClick="{{ addArtist }}" hint-size="auto,40px">Add an artist</x-import>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ tabText }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:22px;max-width:560px;display:flex;flex-direction:column;gap:18px">
+        <div>
+          <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Eyebrow</div>
+          <div style="margin-top:8px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ txtEyebrow }}" onChange="{{ setEyebrow }}" aria-label="Eyebrow" hint-size="100%,42px"></x-import>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Headline</div>
+          <div style="margin-top:8px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ txtTitle }}" onChange="{{ setTitleText }}" aria-label="Headline" hint-size="100%,42px"></x-import>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Opening paragraph</div>
+          <div style="margin-top:8px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Textarea" rows="{{ rows4 }}" value="{{ txtIntro }}" onChange="{{ setIntroText }}" aria-label="Opening paragraph" hint-size="100%,110px"></x-import>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Footer line</div>
+          <div style="margin-top:8px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ txtFooter }}" onChange="{{ setFooterText }}" aria-label="Footer line" hint-size="100%,42px"></x-import>
+          </div>
+          <div style="margin-top:8px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.05em;color:#9DABA6">{{ footerPreview }}</div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.05em;color:#9DABA6">Saved as you type.</div>
+      </div>
+    </sc-if>
+
+    <div style="margin-top:24px;min-height:26px;font-family:var(--font-hand);font-size:21px;line-height:1.2;color:#D9A354">{{ adminToast }}</div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ viewEditor }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Admin record" style="position:relative;z-index:3;max-width:min(1080px,100%);margin:0 auto;padding:26px clamp(20px,4vw,34px) 90px">
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <button type="button" onClick="{{ toDesk }}" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="arrow-left" size="{{ sz16 }}" hint-size="16px,16px"></x-import>
+        The desk
+      </button>
+      <span style="padding:3px 8px;border:1px solid {{ edBadgeBorder }};border-radius:2px;font-family:var(--font-ui);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:{{ edBadgeColor }}">{{ edBadge }}</span>
+    </header>
+
+    <h1 style="margin:16px 0 0;font-family:var(--font-editorial);font-weight:700;font-size:clamp(28px,7vw,38px);line-height:1.06;color:#F4F0E6;text-wrap:pretty">{{ edAlbum }}</h1>
+    <div style="margin-top:14px;width:52px;height:2px;background:#AE9546"></div>
+
+    <div style="margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+      <div>
+        <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Artist</div>
+        <div style="margin-top:8px">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ edName }}" onChange="{{ setEdName }}" aria-label="Artist name" hint-size="100%,42px"></x-import>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Record title</div>
+        <div style="margin-top:8px">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ edAlbum }}" onChange="{{ setEdAlbum }}" aria-label="Record title" hint-size="100%,42px"></x-import>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Year</div>
+        <div style="margin-top:8px">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ edYear }}" onChange="{{ setEdYear }}" aria-label="Year" hint-size="100%,42px"></x-import>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Access phrase</div>
+        <div style="margin-top:8px">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ edPhrase }}" onChange="{{ setEdPhrase }}" placeholder="none yet" aria-label="Access phrase" hint-size="100%,42px"></x-import>
+        </div>
+        <div style="margin-top:8px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;color:#9DABA6">This is what opens the record. Leaving it empty keeps everyone out.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">A word about it</div>
+      <div style="margin-top:8px;max-width:560px">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Textarea" rows="{{ rows5 }}" value="{{ edIntro }}" onChange="{{ setEdIntro }}" aria-label="About this record" hint-size="100%,130px"></x-import>
+      </div>
+    </div>
+
+    <div style="margin-top:30px;height:2px;background:rgba(232,227,215,0.28)"></div>
+
+    <div style="margin-top:24px;display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+      <div style="flex:0 0 auto;width:200px;max-width:100%">
+        <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Cover art</div>
+        <div style="margin-top:10px;position:relative;width:200px;max-width:100%;aspect-ratio:1 / 1;border:1px solid rgba(232,227,215,0.16)">
+          <sc-for list="{{ editorCover }}" as="c" hint-placeholder-count="1">
+            <image-slot id="cover-{{ c.id }}" shape="rect" fit="cover" placeholder="Drop the cover art"></image-slot>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:1 1 240px;min-width:0">
+        <div style="font-family:var(--font-ui);font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">Where it stands</div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Button" size="sm" variant="secondary" onClick="{{ edTogglePublish }}" hint-size="auto,32px">{{ edPublishLabel }}</x-import>
+        </div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+          <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Switch" checked="{{ edEnabled }}" onChange="{{ setEdEnabled }}" aria-label="Listed on the site" hint-size="44px,24px"></x-import>
+          <span style="font-family:var(--font-ui);font-size:13px;font-weight:600;color:#E8E3D7">Listed on the site</span>
+        </div>
+        <p style="margin:14px 0 0;max-width:36ch;font-size:14px;line-height:1.6;color:#9DABA6;text-wrap:pretty">{{ edStateNote }}</p>
+      </div>
+    </div>
+
+    <div style="margin-top:30px;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="font-family:var(--font-signage);font-size:14px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:#C5AE67">The tracks</div>
+      <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:#9DABA6">{{ edTrackCount }}</div>
+    </div>
+
+    <div style="margin-top:8px;border-bottom:1px solid rgba(232,227,215,0.1)">
+      <sc-for list="{{ edTracks }}" as="t" hint-placeholder-count="6">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0;border-top:1px solid rgba(232,227,215,0.1)">
+          <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:3px">
+            <button type="button" onClick="{{ t.onUp }}" disabled="{{ t.isFirst }}" aria-label="Move up" title="Move up" style="width:30px;height:24px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(232,227,215,0.16);border-radius:3px;background:transparent;cursor:pointer;color:{{ t.upColor }}" style-hover="background:rgba(232,227,215,0.07)">
+              <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="chevron-up" size="{{ sz14 }}" hint-size="14px,14px"></x-import>
+            </button>
+            <button type="button" onClick="{{ t.onDown }}" disabled="{{ t.isLast }}" aria-label="Move down" title="Move down" style="width:30px;height:24px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(232,227,215,0.16);border-radius:3px;background:transparent;cursor:pointer;color:{{ t.downColor }}" style-hover="background:rgba(232,227,215,0.07)">
+              <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="chevron-down" size="{{ sz14 }}" hint-size="14px,14px"></x-import>
+            </button>
+          </div>
+          <div style="flex:0 0 auto;width:22px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:#9DABA6">{{ t.num }}</div>
+          <div style="flex:1 1 180px;min-width:140px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ t.title }}" onChange="{{ t.setTitle }}" aria-label="Track title" hint-size="100%,40px"></x-import>
+          </div>
+          <div style="flex:0 0 74px">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Input" value="{{ t.durText }}" onChange="{{ t.setDur }}" aria-label="Length" hint-size="74px,40px"></x-import>
+          </div>
+          <button type="button" onClick="{{ t.onHide }}" aria-label="{{ t.hideLabel }}" title="{{ t.hideLabel }}" style="flex:0 0 auto;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;cursor:pointer;color:{{ t.hideColor }}" style-hover="background:rgba(232,227,215,0.07)">
+            <sc-if value="{{ t.hidden }}" hint-placeholder-val="{{ false }}">
+              <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="eye-off" size="{{ sz18 }}" hint-size="18px,18px"></x-import>
+            </sc-if>
+            <sc-if value="{{ t.shown }}" hint-placeholder-val="{{ true }}">
+              <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="eye" size="{{ sz18 }}" hint-size="18px,18px"></x-import>
+            </sc-if>
+          </button>
+          <button type="button" onClick="{{ t.onRemove }}" aria-label="{{ t.removeLabel }}" title="{{ t.removeLabel }}" style="flex:0 0 auto;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:3px;background:transparent;cursor:pointer;color:#9DABA6" style-hover="background:rgba(232,227,215,0.07)">
+            <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="trash-2" size="{{ sz18 }}" hint-size="18px,18px"></x-import>
+          </button>
+          <sc-if value="{{ t.uploaded }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1 1 100%;font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#C5AE67">{{ t.fileNote }}</div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ edNoTracks }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:16px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.05em;color:#9DABA6">Nothing here yet. Plenty of time.</div>
+    </sc-if>
+
+    <div style="margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <label style="display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 18px;border:2px solid rgba(232,227,215,0.2);border-radius:3px;cursor:pointer;font-family:var(--font-ui);font-size:13px;font-weight:600;color:#F1EDE2" style-hover="background:rgba(232,227,215,0.07)">
+        <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Icon" name="upload" size="{{ sz16 }}" hint-size="16px,16px"></x-import>
+        Upload audio
+        <input type="file" accept="audio/*" multiple="" onChange="{{ onAudioFiles }}" style="display:none">
+      </label>
+      <x-import component-from-global-scope="TimberInkDesignSystem_53a136.Button" size="md" variant="ghost" onClick="{{ addTrack }}" hint-size="auto,40px">Add a blank track</x-import>
+    </div>
+
+    <div style="margin-top:26px;padding-top:16px;border-top:1px solid rgba(232,227,215,0.12);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <button type="button" onClick="{{ removeArtist }}" style="min-height:40px;padding:0 2px;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:{{ removeColor }}" style-hover="color:#DE9D4B">{{ removeLabel }}</button>
+      <sc-if value="{{ confirming }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ cancelRemove }}" style="min-height:40px;padding:0 2px;border:0;background:transparent;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9DABA6" style-hover="color:#E8E3D7">Keep it</button>
+      </sc-if>
+    </div>
+
+    <div style="margin-top:20px;min-height:26px;font-family:var(--font-hand);font-size:21px;line-height:1.2;color:#D9A354">{{ adminToast }}</div>
+  </section>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accessPhrase&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;harbor light&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;label&quot;:&quot;Shadow Harbor's phrase&quot;,&quot;section&quot;:&quot;Access&quot;},&quot;showPhraseHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;label&quot;:&quot;Show the phrase hint&quot;,&quot;section&quot;:&quot;Access&quot;},&quot;adminKey&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;lamplight&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;label&quot;:&quot;Admin key&quot;,&quot;section&quot;:&quot;Access&quot;},&quot;continuousPlay&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;label&quot;:&quot;Play straight through&quot;,&quot;section&quot;:&quot;Player&quot;},&quot;crossfadeSeconds&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:4,&quot;min&quot;:1,&quot;max&quot;:4,&quot;step&quot;:1,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;label&quot;:&quot;Crossfade length&quot;,&quot;section&quot;:&quot;Player&quot;},&quot;lamplight&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;label&quot;:&quot;Lamplight wash&quot;,&quot;section&quot;:&quot;Texture&quot;},&quot;wear&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;label&quot;:&quot;Worn desk texture&quot;,&quot;section&quot;:&quot;Texture&quot;},&quot;tape&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;label&quot;:&quot;Tape strips&quot;,&quot;section&quot;:&quot;Texture&quot;}}">
+class Component extends DCLogic {
+  SEED = [
+    {
+      id: "shadow-harbor", name: "Shadow Harbor", album: "Everything I didn't say", year: 2026,
+      phrase: "harbor light", enabled: true, published: true,
+      intro: "I wrote most of this late, after the house went quiet — one guitar, one microphone, and the things I kept not saying that year. It isn't polished, and I'd rather it wasn't. Play it in order if you have the time; it was written that way.",
+      tracks: [
+        { id: "sh1", title: "Harbor light", sec: 232 },
+        { id: "sh2", title: "What the tide leaves", sec: 266 },
+        { id: "sh3", title: "Low ceiling", sec: 194 },
+        { id: "sh4", title: "Every porch on the block", sec: 303 },
+        { id: "sh5", title: "Half a mile out", sec: 251 },
+        { id: "sh6", title: "Cold frame", sec: 178 },
+        { id: "sh7", title: "The long way home", sec: 287 },
+        { id: "sh8", title: "Sleepless channel", sec: 215 },
+        { id: "sh9", title: "Nothing to forgive", sec: 262 },
+        { id: "sh10", title: "Everything I didn't say", sec: 338 }
+      ]
+    },
+    {
+      id: "pale-ledger", name: "Pale Ledger", album: "Slow county", year: 2025,
+      phrase: "paper lantern", enabled: true, published: true,
+      intro: "Seven songs about staying put — written on a back porch over one long summer, and recorded about as plainly as they were written.",
+      tracks: [
+        { id: "pl1", title: "Dry creek", sec: 221 },
+        { id: "pl2", title: "Ledger line", sec: 245 },
+        { id: "pl3", title: "The fairgrounds", sec: 192 },
+        { id: "pl4", title: "Borrowed truck", sec: 278 },
+        { id: "pl5", title: "Grain elevator", sec: 169 },
+        { id: "pl6", title: "What I owe you", sec: 301 },
+        { id: "pl7", title: "Slow county", sec: 262 }
+      ]
+    },
+    {
+      id: "north-pasture", name: "North Pasture", album: "Winter light, held", year: 2024,
+      phrase: "kitchen radio", enabled: true, published: true,
+      intro: "Eight quiet ones, cut in a barn between December and March. Headphones help — there's a lot of room tone in here, and I left it in on purpose.",
+      tracks: [
+        { id: "np1", title: "First frost", sec: 206 },
+        { id: "np2", title: "Fence line", sec: 252 },
+        { id: "np3", title: "Barn swallows", sec: 184 },
+        { id: "np4", title: "Nobody's road", sec: 284 },
+        { id: "np5", title: "The long thaw", sec: 316 },
+        { id: "np6", title: "Kerosene", sec: 213 },
+        { id: "np7", title: "Held", sec: 178 },
+        { id: "np8", title: "Winter light", sec: 291 }
+      ]
+    }
+  ];
+
+  SEED_TEXT = {
+    eyebrow: "A small catalog",
+    title: "Recordings",
+    intro: "Every record here sits behind its own phrase. If I sent you one, it opens that artist and nothing else — no account, nothing to remember.",
+    footer: "more when they're ready"
+  };
+
+  state = {
+    view: "roster", artistId: "shadow-harbor", unlocked: {}, phrase: "", nudge: "",
+    cur: 0, playing: false, pos: 0, shuffle: false, repeat: "off", vol: 0.85,
+    volOpen: false, installOpen: false, saved: {}, likes: {}, toast: "", audioMissing: false,
+    crossfade: false, filesOpen: false, fileFormat: "mp3",
+    catalog: this.SEED, siteText: this.SEED_TEXT,
+    isAdmin: false, adminPass: "", adminNudge: "", adminTab: "catalog",
+    editId: null, confirmId: null, adminToast: ""
+  };
+
+  KEY = "shadowharbor.v2";
+  ADMIN_KEY = "shadowharbor.admin.v1";
+  SESSION_KEY = "shadowharbor.adminsession.v1";
+  BASE_LIKES = { "shadow-harbor": 38, "pale-ledger": 17, "north-pasture": 24 };
+
+  componentDidMount() {
+    this.bar = React.createRef();
+    this.blobs = {};
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        this.setState({
+          unlocked: s.unlocked || {}, saved: s.saved || {}, likes: s.likes || {},
+          vol: typeof s.vol === "number" ? s.vol : 0.85, crossfade: !!s.crossfade
+        });
+      }
+    } catch (e) { /* first visit */ }
+    try {
+      const raw = localStorage.getItem(this.ADMIN_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s && Array.isArray(s.catalog) && s.catalog.length) {
+          this.setState({ catalog: s.catalog, siteText: { ...this.SEED_TEXT, ...(s.siteText || {}) } });
+        }
+      }
+    } catch (e) { /* nothing saved yet */ }
+    let signedIn = false;
+    try { signedIn = localStorage.getItem(this.SESSION_KEY) === "open"; } catch (e) { /* blocked */ }
+    const wantsAdmin = typeof location !== "undefined" && location.hash === "#admin";
+    if (signedIn) this.setState({ isAdmin: true, view: wantsAdmin ? "desk" : "roster" });
+    else if (wantsAdmin) this.setState({ view: "adminLogin" });
+
+    this.els = [new Audio(), new Audio()];
+    this.ai = 0;
+    this.real = false;
+    this.els.forEach(a => {
+      a.preload = "none";
+      a.addEventListener("playing", () => { this.real = true; this.setState({ audioMissing: false }); });
+      a.addEventListener("error", () => { this.real = false; this.setState({ audioMissing: true }); });
+    });
+  }
+
+  componentWillUnmount() {
+    this.stopClock();
+    if (this.els) this.els.forEach(a => { a.pause(); a.src = ""; });
+    this.persist();
+    if (this.t) clearTimeout(this.t);
+    if (this.at) clearTimeout(this.at);
+  }
+
+  uid() { return Math.random().toString(36).slice(2, 9); }
+
+  publicList() { return this.state.catalog.filter(a => a.enabled && a.published); }
+  artist() {
+    return this.state.catalog.find(a => a.id === this.state.artistId) || this.publicList()[0] || this.state.catalog[0];
+  }
+  editing() { return this.state.catalog.find(a => a.id === this.state.editId) || null; }
+  list() {
+    const a = this.artist();
+    return a ? a.tracks.filter(t => !t.hidden) : [];
+  }
+  fileOf(i) {
+    const a = this.artist();
+    const t = this.list()[i];
+    if (!t) return "";
+    if (this.blobs && this.blobs[t.id]) return this.blobs[t.id];
+    const slug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return "audio/" + a.id + "/" + String(i + 1).padStart(2, "0") + "-" + slug + ".mp3";
+  }
+  phraseFor(a) {
+    if (a.id === "shadow-harbor" && this.props.accessPhrase && a.phrase === "harbor light") return String(this.props.accessPhrase);
+    return a.phrase;
+  }
+  el() { return this.els ? this.els[this.ai] : null; }
+  cfSec() {
+    const v = Number(this.props.crossfadeSeconds);
+    return Math.max(0, Math.min(4, isNaN(v) ? 4 : v));
+  }
+
+  persist() {
+    try {
+      localStorage.setItem(this.KEY, JSON.stringify({
+        unlocked: this.state.unlocked, saved: this.state.saved, likes: this.state.likes,
+        vol: this.state.vol, crossfade: this.state.crossfade
+      }));
+    } catch (e) { /* storage blocked */ }
+  }
+
+  saveAdmin() {
+    try {
+      localStorage.setItem(this.ADMIN_KEY, JSON.stringify({ catalog: this.state.catalog, siteText: this.state.siteText }));
+    } catch (e) { /* storage blocked */ }
+  }
+
+  fmt(s) {
+    const v = Math.max(0, Math.floor(s));
+    return Math.floor(v / 60) + ":" + String(v % 60).padStart(2, "0");
+  }
+
+  parseDur(txt) {
+    const m = String(txt).trim().match(/^(\d+):([0-5]?\d)$/);
+    if (m) return Number(m[1]) * 60 + Number(m[2]);
+    const n = Number(String(txt).trim());
+    return isNaN(n) ? null : Math.round(n);
+  }
+
+  say(msg) {
+    this.setState({ toast: msg });
+    if (this.t) clearTimeout(this.t);
+    this.t = setTimeout(() => this.setState({ toast: "" }), 4200);
+  }
+
+  sayAdmin(msg) {
+    this.setState({ adminToast: msg });
+    if (this.at) clearTimeout(this.at);
+    this.at = setTimeout(() => this.setState({ adminToast: "" }), 4200);
+  }
+
+  patchArtist(id, patch) {
+    this.setState(st => ({ catalog: st.catalog.map(a => (a.id === id ? { ...a, ...patch } : a)) }), () => this.saveAdmin());
+  }
+
+  patchTrack(artistId, trackId, patch) {
+    this.setState(st => ({
+      catalog: st.catalog.map(a => (a.id === artistId
+        ? { ...a, tracks: a.tracks.map(t => (t.id === trackId ? { ...t, ...patch } : t)) }
+        : a))
+    }), () => this.saveAdmin());
+  }
+
+  moveIn(arr, i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return arr;
+    const out = arr.slice();
+    const tmp = out[i];
+    out[i] = out[j];
+    out[j] = tmp;
+    return out;
+  }
+
+  moveArtist(i, dir) {
+    this.setState(st => ({ catalog: this.moveIn(st.catalog, i, dir) }), () => this.saveAdmin());
+  }
+
+  moveTrack(artistId, i, dir) {
+    this.setState(st => ({
+      catalog: st.catalog.map(a => (a.id === artistId ? { ...a, tracks: this.moveIn(a.tracks, i, dir) } : a))
+    }), () => this.saveAdmin());
+  }
+
+  addArtist() {
+    const id = "artist-" + this.uid();
+    const fresh = {
+      id, name: "New artist", album: "Untitled record", year: new Date().getFullYear(),
+      phrase: "", enabled: true, published: false, intro: "", tracks: []
+    };
+    this.setState(st => ({ catalog: [...st.catalog, fresh], editId: id, view: "editor", confirmId: null }), () => this.saveAdmin());
+    window.scrollTo(0, 0);
+    this.sayAdmin("Started a draft. Nobody sees it until you publish.");
+  }
+
+  addTrack(artistId) {
+    const t = { id: "t" + this.uid(), title: "Untitled", sec: 0, durText: "0:00", hidden: false };
+    this.setState(st => ({
+      catalog: st.catalog.map(a => (a.id === artistId ? { ...a, tracks: [...a.tracks, t] } : a))
+    }), () => this.saveAdmin());
+  }
+
+  removeTrack(artistId, trackId) {
+    if (this.blobs && this.blobs[trackId]) {
+      try { URL.revokeObjectURL(this.blobs[trackId]); } catch (e) { /* ignore */ }
+      delete this.blobs[trackId];
+    }
+    this.setState(st => ({
+      catalog: st.catalog.map(a => (a.id === artistId ? { ...a, tracks: a.tracks.filter(t => t.id !== trackId) } : a))
+    }), () => this.saveAdmin());
+  }
+
+  onAudioFiles(artistId, ev) {
+    const files = Array.from(ev.target.files || []);
+    if (!files.length) return;
+    if (!this.blobs) this.blobs = {};
+    const added = files.map(f => {
+      const id = "t" + this.uid();
+      const url = URL.createObjectURL(f);
+      this.blobs[id] = url;
+      const base = f.name.replace(/\.[^.]+$/, "").replace(/^\d+[-_. ]+/, "").replace(/[-_]+/g, " ").trim();
+      const probe = new Audio();
+      probe.preload = "metadata";
+      probe.src = url;
+      probe.addEventListener("loadedmetadata", () => {
+        if (isFinite(probe.duration) && probe.duration > 0) {
+          this.patchTrack(artistId, id, { sec: Math.round(probe.duration), durText: this.fmt(probe.duration) });
+        }
+      });
+      return {
+        id, title: base ? base.charAt(0).toUpperCase() + base.slice(1) : "Untitled",
+        sec: 0, durText: "0:00", hidden: false, uploaded: true, fileName: f.name
+      };
+    });
+    this.setState(st => ({
+      catalog: st.catalog.map(a => (a.id === artistId ? { ...a, tracks: [...a.tracks, ...added] } : a))
+    }), () => this.saveAdmin());
+    this.sayAdmin(files.length === 1 ? "Added one track." : "Added " + files.length + " tracks.");
+    ev.target.value = "";
+  }
+
+  stopClock() { if (this.iv) { clearInterval(this.iv); this.iv = null; } }
+
+  startClock() {
+    this.stopClock();
+    this.t0 = performance.now();
+    this.p0 = this.state.pos;
+    this.iv = setInterval(() => {
+      const track = this.list()[this.state.cur];
+      if (!track) { this.stopClock(); return; }
+      const dur = track.sec || 1;
+      const a = this.el();
+      const pos = this.real && a ? a.currentTime : this.p0 + (performance.now() - this.t0) / 1000;
+      const cf = this.cfSec();
+      if (this.state.crossfade && !this.xf && cf > 0 && dur - pos <= cf) this.beginXf();
+      if (this.xf) {
+        const k = Math.min(1, (performance.now() - this.xf.t) / (cf * 1000));
+        const v = this.state.vol;
+        this.els[this.xf.from].volume = v * (1 - k);
+        this.els[this.xf.to].volume = v * k;
+        this.setState({ pos: Math.min(pos, dur) });
+        if (k >= 1) this.finishXf();
+        return;
+      }
+      if (pos >= dur) { this.advance(true); return; }
+      this.setState({ pos });
+    }, 250);
+  }
+
+  nextIndex() {
+    const n = this.list().length;
+    if (this.state.shuffle) {
+      let i;
+      do { i = Math.floor(Math.random() * n); } while (n > 1 && i === this.state.cur);
+      return i;
+    }
+    const i = this.state.cur + 1;
+    if (i >= n) return this.state.repeat === "all" ? 0 : -1;
+    return i;
+  }
+
+  beginXf() {
+    if (this.state.repeat === "one" || this.props.continuousPlay === false) return;
+    const ni = this.nextIndex();
+    if (ni < 0) return;
+    const to = 1 - this.ai;
+    const el = this.els[to];
+    el.src = this.fileOf(ni);
+    el.volume = 0;
+    const p = el.play();
+    if (p && p.catch) p.catch(() => { /* stand-in clock */ });
+    this.xf = { t: performance.now(), from: this.ai, to, next: ni };
+  }
+
+  finishXf() {
+    const x = this.xf;
+    this.xf = null;
+    const from = this.els[x.from];
+    from.pause();
+    try { from.currentTime = 0; } catch (e) { /* not loaded */ }
+    from.volume = this.state.vol;
+    this.els[x.to].volume = this.state.vol;
+    this.ai = x.to;
+    const startAt = this.cfSec();
+    this.p0 = startAt;
+    this.t0 = performance.now();
+    this.setState({ cur: x.next, pos: startAt });
+  }
+
+  cancelXf() {
+    if (!this.xf) return;
+    const x = this.xf;
+    this.xf = null;
+    const to = this.els[x.to];
+    to.pause();
+    try { to.currentTime = 0; } catch (e) { /* not loaded */ }
+    to.volume = this.state.vol;
+    this.els[x.from].volume = this.state.vol;
+  }
+
+  playIndex(i, restart) {
+    this.cancelXf();
+    const startAt = restart ? 0 : (i === this.state.cur ? this.state.pos : 0);
+    this.setState({ cur: i, pos: startAt, playing: true });
+    this.p0 = startAt;
+    this.t0 = performance.now();
+    const a = this.el();
+    if (a) {
+      const file = this.fileOf(i);
+      const want = new URL(file, location.href).href;
+      if (a.src !== want) { this.real = false; a.src = file; }
+      a.volume = this.state.vol;
+      try { a.currentTime = startAt; } catch (e) { /* not loaded yet */ }
+      const p = a.play();
+      if (p && p.catch) p.catch(() => { this.real = false; this.setState({ audioMissing: true }); });
+    }
+    this.startClock();
+  }
+
+  pause() {
+    this.cancelXf();
+    this.setState({ playing: false });
+    if (this.els) this.els.forEach(a => a.pause());
+    this.stopClock();
+  }
+
+  stop() {
+    this.cancelXf();
+    this.stopClock();
+    if (this.els) this.els.forEach(a => { a.pause(); });
+    this.setState({ playing: false, pos: 0, cur: 0 });
+  }
+
+  advance(auto) {
+    this.cancelXf();
+    if (auto && this.state.repeat === "one") { this.playIndex(this.state.cur, true); return; }
+    if (auto && this.props.continuousPlay === false) { this.pause(); this.setState({ pos: 0 }); return; }
+    let i = this.nextIndex();
+    if (i < 0) {
+      if (auto) { this.stop(); return; }
+      i = 0;
+    }
+    this.playIndex(i, true);
+  }
+
+  back() {
+    this.cancelXf();
+    if (this.state.pos > 3) { this.playIndex(this.state.cur, true); return; }
+    const i = this.state.cur === 0 ? this.list().length - 1 : this.state.cur - 1;
+    this.playIndex(i, true);
+  }
+
+  seekFromEvent(e) {
+    const el = this.bar && this.bar.current;
+    if (!el) return;
+    const track = this.list()[this.state.cur];
+    if (!track) return;
+    const r = el.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const pos = ratio * (track.sec || 1);
+    this.cancelXf();
+    this.setState({ pos });
+    this.p0 = pos;
+    this.t0 = performance.now();
+    const a = this.el();
+    if (a && this.real) { try { a.currentTime = pos; } catch (err) { /* ignore */ } }
+  }
+
+  openArtist(id) {
+    this.stop();
+    const open = this.state.isAdmin || !!this.state.unlocked[id];
+    this.setState({ artistId: id, view: open ? "album" : "gate", phrase: "", nudge: "", installOpen: false, filesOpen: false, volOpen: false, toast: "" });
+    window.scrollTo(0, 0);
+  }
+
+  toRoster() {
+    this.pause();
+    this.setState({ view: "roster", phrase: "", nudge: "", adminPass: "", adminNudge: "" });
+    window.scrollTo(0, 0);
+  }
+
+  attempt() {
+    const a = this.artist();
+    const want = this.phraseFor(a).trim().toLowerCase().replace(/\s+/g, " ");
+    const got = this.state.phrase.trim().toLowerCase().replace(/\s+/g, " ");
+    if (!got) { this.setState({ nudge: "I'll need the phrase first." }); return; }
+    if (want && got === want) {
+      this.setState(st => ({ view: "album", phrase: "", nudge: "", unlocked: { ...st.unlocked, [a.id]: true } }), () => this.persist());
+      window.scrollTo(0, 0);
+      return;
+    }
+    this.setState({ nudge: "That isn't it — try the phrase I sent you." });
+  }
+
+  adminKey() { return String(this.props.adminKey || "lamplight"); }
+
+  attemptAdmin() {
+    const got = this.state.adminPass.trim().toLowerCase();
+    if (!got) { this.setState({ adminNudge: "I'll need the key first." }); return; }
+    if (got === this.adminKey().trim().toLowerCase()) {
+      try { localStorage.setItem(this.SESSION_KEY, "open"); } catch (e) { /* blocked */ }
+      this.setState({ isAdmin: true, view: "desk", adminPass: "", adminNudge: "", adminTab: "catalog" });
+      window.scrollTo(0, 0);
+      return;
+    }
+    this.setState({ adminNudge: "That isn't the key." });
+  }
+
+  signOut() {
+    try { localStorage.removeItem(this.SESSION_KEY); } catch (e) { /* blocked */ }
+    this.setState({ isAdmin: false, view: "roster", adminPass: "", adminNudge: "", editId: null, confirmId: null });
+    window.scrollTo(0, 0);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const txt = s.siteText;
+    const pub = this.publicList();
+    const art = this.artist();
+    const list = this.list();
+    const cur = list[s.cur] || list[0] || { title: "Nothing playing", sec: 1 };
+    const total = list.reduce((a, t) => a + t.sec, 0);
+    const rate = s.fileFormat === "wav" ? 0.28 : 0.039;
+    const label = s.fileFormat === "wav" ? "24-bit WAV" : "320 kbps MP3";
+    const savedCount = art ? Object.keys(s.saved).filter(k => k.indexOf(art.id + ":") === 0 && s.saved[k]).length : 0;
+    const likeCount = art ? (this.BASE_LIKES[art.id] || 0) + (s.likes[art.id] ? 1 : 0) : 0;
+    const draftCount = s.catalog.filter(a => !a.published).length;
+
+    const roster = (s.isAdmin ? s.catalog : pub).map(a => {
+      const open = s.isAdmin || !!s.unlocked[a.id];
+      const shown = a.tracks.filter(t => !t.hidden);
+      const mins = Math.round(shown.reduce((x, t) => x + t.sec, 0) / 60);
+      const onOpen = () => this.openArtist(a.id);
+      const flag = !a.published ? "Draft" : !a.enabled ? "Unlisted" : open ? "Open" : "Locked";
+      return {
+        name: a.name,
+        album: a.album,
+        meta: a.year + " · " + shown.length + " tracks · " + mins + " min",
+        state: flag,
+        stateColor: !a.published || !a.enabled ? "#DE9D4B" : open ? "#C5AE67" : "#9DABA6",
+        tab: 0,
+        onOpen,
+        onKey: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }
+      };
+    });
+
+    const tracks = list.map((t, i) => {
+      const active = i === s.cur;
+      const key = art.id + ":" + t.id;
+      const saved = !!s.saved[key];
+      const onPlay = () => { if (active && s.playing) this.pause(); else this.playIndex(i, !active); };
+      return {
+        num: String(i + 1).padStart(2, "0"),
+        title: t.title,
+        dur: this.fmt(t.sec),
+        tab: 0,
+        rowBg: active ? "rgba(232,227,215,0.06)" : "transparent",
+        marker: active ? "inset 2px 0 0 #E8E3D7" : "none",
+        numColor: active ? "#F1EDE2" : "#9DABA6",
+        titleColor: active ? "#F4F0E6" : "#C3CBC6",
+        saved,
+        notSaved: !saved,
+        saveColor: saved ? "#C5AE67" : "#9DABA6",
+        saveLabel: saved ? "Kept on this device" : "Keep " + t.title + " on this device",
+        onPlay,
+        onKey: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPlay(); } },
+        onSave: () => {
+          this.setState(st => ({ saved: { ...st.saved, [key]: !st.saved[key] } }), () => this.persist());
+          this.say(saved ? "Took " + t.title + " back off this device." : "Kept " + t.title + " — it'll play without a signal.");
+        }
+      };
+    });
+
+    const adminArtists = s.catalog.map((a, i) => {
+      const isFirst = i === 0;
+      const isLast = i === s.catalog.length - 1;
+      const live = a.published && a.enabled;
+      const badge = !a.published ? "Draft" : a.enabled ? "Published" : "Hidden";
+      return {
+        name: a.name,
+        album: a.album,
+        meta: a.year + " · " + a.tracks.length + " tracks",
+        badge,
+        badgeColor: !a.published ? "#DE9D4B" : live ? "#C5AE67" : "#9DABA6",
+        badgeBorder: !a.published ? "rgba(222,157,75,0.5)" : live ? "rgba(197,174,103,0.5)" : "rgba(232,227,215,0.2)",
+        enabled: !!a.enabled,
+        listedLabel: "Listed on the site",
+        phrase: a.phrase || "",
+        phraseLabel: "Access phrase for " + a.name,
+        setPhrase: e => this.patchArtist(a.id, { phrase: e.target.value }),
+        isFirst, isLast,
+        upColor: isFirst ? "#33504F" : "#C3CBC6",
+        downColor: isLast ? "#33504F" : "#C3CBC6",
+        onUp: () => { if (!isFirst) this.moveArtist(i, -1); },
+        onDown: () => { if (!isLast) this.moveArtist(i, 1); },
+        onEdit: () => { this.setState({ view: "editor", editId: a.id, confirmId: null }); window.scrollTo(0, 0); },
+        publishLabel: a.published ? "Move back to drafts" : "Publish it",
+        onPublish: () => {
+          this.patchArtist(a.id, { published: !a.published });
+          this.sayAdmin(a.published ? a.album + " is a draft again." : a.album + " is on the site now.");
+        },
+        setEnabled: v => {
+          this.patchArtist(a.id, { enabled: !!v });
+          this.sayAdmin(v ? a.name + " is listed again." : a.name + " is off the list for now.");
+        }
+      };
+    });
+
+    const ed = this.editing();
+    const edTracks = ed ? ed.tracks.map((t, i) => {
+      const isFirst = i === 0;
+      const isLast = i === ed.tracks.length - 1;
+      return {
+        num: String(i + 1).padStart(2, "0"),
+        title: t.title,
+        durText: t.durText || this.fmt(t.sec),
+        hidden: !!t.hidden,
+        shown: !t.hidden,
+        uploaded: !!t.uploaded,
+        fileNote: t.fileName ? "Audio · " + t.fileName : "Audio uploaded",
+        isFirst, isLast,
+        upColor: isFirst ? "#33504F" : "#C3CBC6",
+        downColor: isLast ? "#33504F" : "#C3CBC6",
+        hideColor: t.hidden ? "#DE9D4B" : "#9DABA6",
+        hideLabel: t.hidden ? "Hidden — show it" : "Showing — hide it",
+        removeLabel: "Remove " + t.title,
+        onUp: () => { if (!isFirst) this.moveTrack(ed.id, i, -1); },
+        onDown: () => { if (!isLast) this.moveTrack(ed.id, i, 1); },
+        setTitle: e => this.patchTrack(ed.id, t.id, { title: e.target.value }),
+        setDur: e => {
+          const v = e.target.value;
+          const sec = this.parseDur(v);
+          this.patchTrack(ed.id, t.id, sec === null ? { durText: v } : { durText: v, sec });
+        },
+        onHide: () => this.patchTrack(ed.id, t.id, { hidden: !t.hidden }),
+        onRemove: () => { this.removeTrack(ed.id, t.id); this.sayAdmin("Took " + t.title + " off the record."); }
+      };
+    }) : [];
+
+    const confirming = !!ed && s.confirmId === ed.id;
+
+    return {
+      lamplight: this.props.lamplight !== false,
+      wear: this.props.wear !== false,
+      tape: this.props.tape !== false,
+      albumYear: art ? String(art.year) : "",
+      sz14: 14, sz16: 16, sz18: 18, sz20: 20, sz22: 22, sz24: 24,
+      rows4: 4, rows5: 5,
+      viewRoster: s.view === "roster",
+      viewGate: s.view === "gate",
+      viewAlbum: s.view === "album",
+      viewAdminLogin: s.view === "adminLogin",
+      viewDesk: s.view === "desk",
+      viewEditor: s.view === "editor" && !!ed,
+
+      siteEyebrow: txt.eyebrow,
+      siteTitle: txt.title,
+      siteIntro: txt.intro,
+      roster,
+      rosterEmpty: roster.length === 0,
+      footerLine: pub.length + (pub.length === 1 ? " artist · " : " artists · ") + txt.footer,
+      doorLabel: s.isAdmin ? "The desk" : "Admin sign-in",
+      showAdminBar: s.isAdmin && (s.view === "roster" || s.view === "gate" || s.view === "album"),
+      adminBarNote: s.view === "album" ? "Phrases don't stop you here" : draftCount + " in drafts",
+      toDeskFromBar: () => {
+        this.pause();
+        this.setState({ view: "desk", editId: null, confirmId: null, adminTab: "catalog" });
+        window.scrollTo(0, 0);
+      },
+      toAdminDoor: () => {
+        this.setState({ view: s.isAdmin ? "desk" : "adminLogin", adminPass: "", adminNudge: "" });
+        window.scrollTo(0, 0);
+      },
+
+      artistName: art ? art.name : "",
+      gateLine: art ? "The phrase I sent you opens " + art.album + " and nothing else. Once you're through, it stays open on this device." : "",
+      showHint: this.props.showPhraseHint !== false,
+      hintLine: art ? "Try " + this.phraseFor(art) + " if you're looking around." : "",
+      adminHintLine: "The key is " + this.adminKey() + " while we're building.",
+      phrase: s.phrase,
+      nudge: s.nudge,
+      onPhrase: e => this.setState({ phrase: e.target.value, nudge: "" }),
+      onPhraseKey: e => { if (e.key === "Enter") this.attempt(); },
+      tryEnter: () => this.attempt(),
+      toRoster: () => this.toRoster(),
+      lock: () => {
+        this.pause();
+        this.setState(st => {
+          const u = { ...st.unlocked };
+          delete u[art.id];
+          return { unlocked: u, view: "roster", volOpen: false, installOpen: false, filesOpen: false };
+        }, () => this.persist());
+        window.scrollTo(0, 0);
+      },
+      coverSlots: art ? [{ id: art.id }] : [],
+      albumTitle: art ? art.album : "",
+      albumMeta: art ? art.year + " · " + list.length + " tracks · " + Math.round(total / 60) + " min" : "",
+      albumIntro: art ? art.intro : "",
+      albumFooter: art ? art.name + " · " + art.year : "",
+      liked: art ? !!s.likes[art.id] : false,
+      likeColor: art && s.likes[art.id] ? "#C5AE67" : "#9DABA6",
+      likeLabel: art && s.likes[art.id] ? "You've liked this record" : "Like this record",
+      likeLine: String(likeCount),
+      toggleLike: () => {
+        const on = !s.likes[art.id];
+        this.setState(st => ({ likes: { ...st.likes, [art.id]: on } }), () => this.persist());
+        this.say(on ? "Thank you — that's kind." : "");
+      },
+      tracks,
+      audioMissing: s.audioMissing,
+      missingNote: art ? "No audio files loaded yet — the player is keeping time on a stand-in clock until they land in /audio/" + art.id + "." : "",
+      nowTitle: cur.title,
+      timeLine: this.fmt(s.pos) + " / " + this.fmt(cur.sec),
+      pct: Math.min(100, (s.pos / (cur.sec || 1)) * 100) + "%",
+      playing: s.playing,
+      paused: !s.playing,
+      playLabel: s.playing ? "Pause" : "Play",
+      togglePlay: () => { if (s.playing) this.pause(); else this.playIndex(s.cur, false); },
+      next: () => this.advance(false),
+      prev: () => this.back(),
+      barRef: this.bar,
+      onBarDown: e => { this.dragging = true; e.currentTarget.setPointerCapture(e.pointerId); this.seekFromEvent(e); },
+      onBarMove: e => { if (this.dragging) this.seekFromEvent(e); },
+      onBarUp: () => { this.dragging = false; },
+      shuffle: s.shuffle,
+      shuffleColor: s.shuffle ? "#C5AE67" : "#9DABA6",
+      toggleShuffle: () => this.setState(st => ({ shuffle: !st.shuffle })),
+      repeatOne: s.repeat === "one",
+      notRepeatOne: s.repeat !== "one",
+      repeatColor: s.repeat === "off" ? "#9DABA6" : "#C5AE67",
+      repeatLabel: s.repeat === "off" ? "Repeat off" : s.repeat === "all" ? "Repeat the album" : "Repeat this track",
+      cycleRepeat: () => this.setState(st => ({ repeat: st.repeat === "off" ? "all" : st.repeat === "all" ? "one" : "off" })),
+      vol: s.vol,
+      volPct: Math.round(s.vol * 100) + "%",
+      volOpen: s.volOpen,
+      toggleVol: () => this.setState(st => ({ volOpen: !st.volOpen })),
+      onVol: e => {
+        const v = parseFloat(e.target.value);
+        this.setState({ vol: v }, () => this.persist());
+        if (this.els && !this.xf) this.els.forEach(a => { a.volume = v; });
+      },
+      installOpen: s.installOpen,
+      toggleInstall: () => this.setState(st => ({ installOpen: !st.installOpen })),
+      savedNote: savedCount
+        ? savedCount + " of " + list.length + " tracks are on this device."
+        : "Nothing kept yet. Plenty of time.",
+      crossfade: s.crossfade,
+      setCrossfade: v => {
+        if (!v) this.cancelXf();
+        this.setState({ crossfade: !!v }, () => this.persist());
+      },
+      filesOpen: s.filesOpen,
+      filesLabel: s.filesOpen ? "Hide the files" : "Download the files",
+      toggleFiles: () => this.setState(st => ({ filesOpen: !st.filesOpen })),
+      mp3Bg: s.fileFormat === "mp3" ? "rgba(232,227,215,0.12)" : "transparent",
+      mp3Fg: s.fileFormat === "mp3" ? "#F1EDE2" : "#9DABA6",
+      wavBg: s.fileFormat === "wav" ? "rgba(232,227,215,0.12)" : "transparent",
+      wavFg: s.fileFormat === "wav" ? "#F1EDE2" : "#9DABA6",
+      setMp3: () => this.setState({ fileFormat: "mp3" }),
+      setWav: () => this.setState({ fileFormat: "wav" }),
+      albumFileNote: "The whole album · " + Math.round(total * rate) + " MB",
+      fileRows: list.map((t, i) => ({
+        num: String(i + 1).padStart(2, "0"),
+        title: t.title,
+        size: Math.max(1, Math.round(t.sec * rate)) + " MB",
+        onClick: () => this.say("Sending " + t.title + " — " + label + ".")
+      })),
+      downloadAlbum: () => this.say("Sending " + (art ? art.album : "") + " — " + list.length + " tracks, " + label + ", about " + Math.round(total * rate) + " MB."),
+      toast: s.toast,
+
+      adminPass: s.adminPass,
+      adminNudge: s.adminNudge,
+      onAdminPass: e => this.setState({ adminPass: e.target.value, adminNudge: "" }),
+      onAdminKeyDown: e => { if (e.key === "Enter") this.attemptAdmin(); },
+      tryAdmin: () => this.attemptAdmin(),
+      signOut: () => this.signOut(),
+      adminToast: s.adminToast,
+      tabCatalog: s.adminTab === "catalog",
+      tabText: s.adminTab === "text",
+      tabCatalogColor: s.adminTab === "catalog" ? "#F1EDE2" : "#9DABA6",
+      tabTextColor: s.adminTab === "text" ? "#F1EDE2" : "#9DABA6",
+      tabCatalogRule: s.adminTab === "catalog" ? "2px solid #AE9546" : "2px solid transparent",
+      tabTextRule: s.adminTab === "text" ? "2px solid #AE9546" : "2px solid transparent",
+      showCatalogTab: () => this.setState({ adminTab: "catalog" }),
+      showTextTab: () => this.setState({ adminTab: "text" }),
+      deskCount: s.catalog.length + " artists · " + draftCount + " in drafts",
+      adminArtists,
+      addArtist: () => this.addArtist(),
+
+      txtEyebrow: txt.eyebrow,
+      txtTitle: txt.title,
+      txtIntro: txt.intro,
+      txtFooter: txt.footer,
+      footerPreview: "Reads as: " + pub.length + " artists · " + txt.footer,
+      setEyebrow: e => { const v = e.target.value; this.setState(st => ({ siteText: { ...st.siteText, eyebrow: v } }), () => this.saveAdmin()); },
+      setTitleText: e => { const v = e.target.value; this.setState(st => ({ siteText: { ...st.siteText, title: v } }), () => this.saveAdmin()); },
+      setIntroText: e => { const v = e.target.value; this.setState(st => ({ siteText: { ...st.siteText, intro: v } }), () => this.saveAdmin()); },
+      setFooterText: e => { const v = e.target.value; this.setState(st => ({ siteText: { ...st.siteText, footer: v } }), () => this.saveAdmin()); },
+
+      toDesk: () => { this.setState({ view: "desk", editId: null, confirmId: null }); window.scrollTo(0, 0); },
+      edName: ed ? ed.name : "",
+      edAlbum: ed ? ed.album : "",
+      edYear: ed ? String(ed.year) : "",
+      edPhrase: ed ? ed.phrase : "",
+      edIntro: ed ? ed.intro : "",
+      edEnabled: ed ? !!ed.enabled : false,
+      edBadge: ed ? (!ed.published ? "Draft" : ed.enabled ? "Published" : "Hidden") : "",
+      edBadgeColor: ed ? (!ed.published ? "#DE9D4B" : ed.enabled ? "#C5AE67" : "#9DABA6") : "#9DABA6",
+      edBadgeBorder: ed ? (!ed.published ? "rgba(222,157,75,0.5)" : ed.enabled ? "rgba(197,174,103,0.5)" : "rgba(232,227,215,0.2)") : "rgba(232,227,215,0.2)",
+      edPublishLabel: ed && ed.published ? "Move back to drafts" : "Publish it",
+      edStateNote: ed
+        ? (!ed.published
+          ? "A draft — nobody can reach it, even with the phrase."
+          : ed.enabled
+            ? "Live on the site, behind its phrase."
+            : "Published, but off the list for now.")
+        : "",
+      edTrackCount: ed ? ed.tracks.length + " tracks" : "",
+      edTracks,
+      edNoTracks: !!ed && ed.tracks.length === 0,
+      setEdName: e => { if (ed) this.patchArtist(ed.id, { name: e.target.value }); },
+      setEdAlbum: e => { if (ed) this.patchArtist(ed.id, { album: e.target.value }); },
+      setEdYear: e => { if (ed) { const n = parseInt(e.target.value, 10); this.patchArtist(ed.id, { year: isNaN(n) ? e.target.value : n }); } },
+      setEdPhrase: e => { if (ed) this.patchArtist(ed.id, { phrase: e.target.value }); },
+      setEdIntro: e => { if (ed) this.patchArtist(ed.id, { intro: e.target.value }); },
+      setEdEnabled: v => { if (ed) this.patchArtist(ed.id, { enabled: !!v }); },
+      edTogglePublish: () => {
+        if (!ed) return;
+        this.patchArtist(ed.id, { published: !ed.published });
+        this.sayAdmin(ed.published ? "Back to a draft — off the site for now." : "Published. It's on the site behind its phrase.");
+      },
+      editorCover: ed ? [{ id: ed.id }] : [],
+      onAudioFiles: e => { if (ed) this.onAudioFiles(ed.id, e); },
+      addTrack: () => { if (ed) this.addTrack(ed.id); },
+      confirming,
+      removeLabel: confirming ? "Remove it for good?" : "Remove this record",
+      removeColor: confirming ? "#DE9D4B" : "#9DABA6",
+      removeArtist: () => {
+        if (!ed) return;
+        if (!confirming) { this.setState({ confirmId: ed.id }); return; }
+        const name = ed.album;
+        this.setState(st => ({
+          catalog: st.catalog.filter(a => a.id !== ed.id),
+          view: "desk", editId: null, confirmId: null
+        }), () => this.saveAdmin());
+        this.sayAdmin("Removed " + name + ".");
+        window.scrollTo(0, 0);
+      },
+      cancelRemove: () => this.setState({ confirmId: null })
+    };
+  }
+}
+</script>
+</body>
+</html>
