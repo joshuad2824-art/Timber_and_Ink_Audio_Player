@@ -59,12 +59,13 @@ build plan before writing code.
 
 ## Where this is
 
-Milestone 1 of six. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
+Milestone 2 of six. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
 
 - [x] **1 — Shell and tokens.** Ported tokens, the four background layers, the
       decorative devices, the type scale, route skeletons.
-- [ ] **2 — Catalog and gate, for real.** Schema, seed, the unlock endpoint with
-      hashing and rate limiting, the per-record cookie.
+- [x] **2 — Catalog and gate, for real.** Schema, seed, `/api/catalog`, the
+      unlock endpoint with scrypt hashing and per-IP rate limiting, the
+      per-record cookie, and the album screen behind it.
 - [ ] **3 — The player.** Audio storage, two elements, seek, shuffle, repeat,
       volume, crossfade, Media Session.
 - [ ] **4 — The desk.** Admin auth, record CRUD, reorder, upload, site text.
@@ -72,12 +73,67 @@ Milestone 1 of six. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
 - [ ] **6 — Hardening.** Rate limits, audit logging, a keyboard pass, Lighthouse
       on a throttled phone.
 
-`src/data/seed.ts` is scaffolding for milestone 1 and gets deleted in milestone
-2. It carries no phrases — the prototype kept those in the browser, and the way
-to not carry that forward is to never let one into the client bundle.
+## How the gate holds
+
+The whole security model is one branch in `src/app/r/[slug]/page.tsx`: a locked
+record never loads its tracks, so there is no payload to strip and nothing to
+leak. Supporting that:
+
+- **`getUnlockedRecord` is the only function that returns tracks**, and it
+  verifies the unlock cookie itself rather than trusting a caller to have done
+  it. There is no way to call it unauthorized and no caller who can forget to.
+- **`phrase_hash` is never selected** by anything in `src/data/catalog.ts`. It
+  leaves the database only inside `verifyPhrase`, on the unlock path.
+- **Phrases are scrypt-hashed** with a per-phrase salt, compared with
+  `timingSafeEqual` on the normalized form (trim, lowercase, collapse
+  whitespace) — the same normalization the desk will write with, so what the
+  owner types is what the listener can type.
+- **A null `phrase_hash` always fails.** The desk allows an empty phrase and the
+  design says so ("Leaving it empty keeps everyone out"), so this must never be
+  the case that lets someone in.
+- **Unlock cookies are HMAC-signed** over `slug.expiry`, so a cookie for one
+  record cannot be edited into a key for another, and nobody can extend their
+  own access. `SHADOW_HARBOR_SECRET` (32+ chars) signs them; without it the app
+  throws in production rather than falling back to something guessable.
+- **Rate limiting is per IP**, in Postgres rather than a cache, because counting
+  attempts has to be atomic — a last-write-wins store would undercount under
+  exactly the concurrency an attacker creates. Failures only; one correct phrase
+  clears the count.
+- **Drafts are invisible**, including to a 404. A missing record, a draft, a
+  record with no phrase, and a wrong phrase all answer identically, so the gate
+  is not an oracle for what exists.
+
+## Environment
+
+| Variable | Where | What |
+| --- | --- | --- |
+| `SHADOW_HARBOR_SECRET` | Netlify (set) | Signs unlock cookies. 32+ chars. Required in production. |
+| `NETLIFY_DATABASE_URL` | Netlify (automatic) | Provisioned by Netlify DB; nothing to configure. |
+| `DATABASE_URL` | local only | Points at a local Postgres for testing. |
+
+To run the database locally:
+
+```
+initdb -D <dir> -U postgres --auth=trust
+pg_ctl -D <dir> -o '-p 5433' start
+createdb -h localhost -p 5433 -U postgres shadow_harbor
+psql -h localhost -p 5433 -U postgres -d shadow_harbor \
+  -f netlify/database/migrations/001_create-catalog/migration.sql
+psql -h localhost -p 5433 -U postgres -d shadow_harbor \
+  -f netlify/database/migrations/002_seed-catalog/migration.sql
+
+DATABASE_URL=postgresql://postgres@localhost:5433/shadow_harbor \
+SHADOW_HARBOR_SECRET=any-32-plus-character-string-for-dev npm run dev
+```
 
 ## Still needed
 
+- **The seeded phrases are public.** `002_seed-catalog` hashes the three demo
+  phrases from the design handoff, which are printed in
+  `design_handoff_shadow_harbor/README.md` in this public repository. Hashing a
+  published phrase protects nothing. Treat the three seeded records as open to
+  anyone who reads the repo, and reset every phrase from the desk (milestone 4)
+  before real music goes behind one.
 - **Cover art and audio.** None was supplied with the handoff. The desk will
   have upload paths for both, but there is nothing to listen to until real media
   exists.

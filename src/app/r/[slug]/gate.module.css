@@ -11,6 +11,7 @@
 }
 
 .label {
+  display: block;
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 700;
@@ -19,17 +20,26 @@
   color: var(--sh-paper-label);
 }
 
-/* Placeholders for the real controls. The card has to hold its finished shape
-   now, or the shell will not tell us whether the proportions are right. */
-.field {
+/* On paper stock, so the design system's daylight tokens carry the ink. */
+.input {
   margin-top: 10px;
-  height: 44px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   background: var(--control-well);
+  color: var(--text-body);
+  font-family: var(--font-body);
+  font-size: 17px; /* 16px or more, or iOS zooms the page on focus */
+  box-shadow: var(--control-inset);
 }
 
-/* The error slot keeps its height when empty so the card never reflows. */
+.input::placeholder {
+  color: var(--sh-paper-hint);
+}
+
+/* Keeps its height when empty so the card never reflows. */
 .errorSlot {
   margin-top: 9px;
   min-height: 19px;
@@ -44,7 +54,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 48px;
+  border: 1px solid var(--action-primary-border);
   border-radius: var(--radius-sm);
   background: var(--action-primary);
   color: var(--text-on-primary);
@@ -52,4 +64,15 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: var(--tracking-wide);
+  cursor: pointer;
+  transition: background-color var(--sh-motion);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--action-primary-hover);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
