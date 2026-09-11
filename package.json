@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@netlify/blobs": "^11.0.3",
     "@netlify/database": "^2.0.1",
     "lucide-react": "^1.45.0",
     "next": "15.5.25",

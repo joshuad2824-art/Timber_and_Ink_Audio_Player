@@ -110,3 +110,103 @@
   padding-top: 18px;
   border-top: 1px solid var(--sh-hairline-faint);
 }
+
+.trackPlayable {
+  cursor: pointer;
+  transition: background-color var(--sh-motion);
+}
+
+.trackPlayable:hover {
+  background: var(--sh-wash-hover);
+}
+
+/* A track whose file isn't up yet. Listed, because the record exists before its
+   audio does, but plainly not startable. */
+.trackSilent {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* The playing row. The left marker is an inset shadow, not a border — a border
+   would shift the row by a pixel every time playback moved. */
+.trackActive {
+  background: var(--sh-wash-active-row);
+  box-shadow: inset 2px 0 0 var(--sh-ink-body);
+}
+
+.trackActive .trackTitle,
+.trackActive .trackNumber {
+  color: var(--sh-ink-headline);
+}
+
+/* A rule-bounded row for the record's own playback options. */
+.optionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 22px 0 6px;
+  padding: 14px 0;
+  border-top: 1px solid var(--sh-hairline);
+  border-bottom: 1px solid var(--sh-hairline);
+}
+
+.switchLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--sh-ink-muted);
+}
+
+/* The real checkbox stays in the accessibility tree and takes focus; the track
+   and knob are what you see. */
+.switchInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switchTrack {
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--control-well);
+  border: 1px solid var(--sh-border-soft);
+  transition: background-color var(--sh-motion), border-color var(--sh-motion);
+}
+
+.switchKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--sh-ink-muted);
+  transition: transform var(--sh-motion), background-color var(--sh-motion);
+}
+
+/* Engaged turns brass — metal, not flame. The play button keeps the only glow. */
+.switchInput:checked + .switchTrack {
+  border-color: var(--sh-brass);
+}
+
+.switchInput:checked + .switchTrack .switchKnob {
+  transform: translateX(20px);
+  background: var(--sh-brass-bright);
+}
+
+.switchInput:focus-visible + .switchTrack {
+  box-shadow: 0 0 0 2px var(--sh-page), 0 0 0 4px var(--sh-amber-hover);
+}
+
+.switchInput:checked ~ span:last-child {
+  color: var(--sh-ink-body);
+}

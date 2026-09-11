@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 
 import { db } from "./db";
 import { unlockCookieName, verifyUnlock } from "./crypto";
+import type { AudioFormat } from "./storage";
 import type { RecordDetail, RecordSummary, SiteText, Track } from "./types";
 
 /* Every query in this file is shaped by one rule from the brief: a locked
@@ -181,4 +182,63 @@ export async function getSiteText(): Promise<SiteText> {
       footer: "more when they're ready",
     }
   );
+}
+
+/**
+ * Resolve one track's stored encoding, for the audio route.
+ *
+ * Verifies the unlock cookie itself, exactly as getUnlockedRecord does, and
+ * confirms the track actually belongs to the record in the URL — otherwise a
+ * cookie for a record you were invited to would serve any track id on the site.
+ * Hidden tracks are unreachable too.
+ */
+export async function getTrackAsset(
+  slug: string,
+  trackId: string,
+  format: AudioFormat,
+): Promise<{ blobKey: string; bytes: number; mimeType: string } | null> {
+  if (!(await isUnlocked(slug))) return null;
+
+  const rows = (await db().sql`
+    SELECT a.blob_key, a.bytes, a.mime_type
+      FROM track_asset a
+      JOIN track t  ON t.id = a.track_id
+      JOIN record r ON r.id = t.record_id
+     WHERE r.slug = ${slug}
+       AND r.published
+       AND t.id = ${trackId}
+       AND NOT t.hidden
+       AND a.format = ${format}
+     LIMIT 1
+  `) as unknown as Array<{ blob_key: string; bytes: string | number; mime_type: string }>;
+
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    blobKey: row.blob_key,
+    bytes: Number(row.bytes),
+    mimeType: row.mime_type,
+  };
+}
+
+/** Which encodings exist for each track of an unlocked record. */
+export async function getAvailableFormats(
+  slug: string,
+): Promise<Record<string, AudioFormat[]>> {
+  if (!(await isUnlocked(slug))) return {};
+
+  const rows = (await db().sql`
+    SELECT a.track_id, a.format
+      FROM track_asset a
+      JOIN track t  ON t.id = a.track_id
+      JOIN record r ON r.id = t.record_id
+     WHERE r.slug = ${slug} AND r.published AND NOT t.hidden
+  `) as unknown as Array<{ track_id: string; format: AudioFormat }>;
+
+  const out: Record<string, AudioFormat[]> = {};
+  for (const row of rows) {
+    (out[row.track_id] ??= []).push(row.format);
+  }
+  return out;
 }

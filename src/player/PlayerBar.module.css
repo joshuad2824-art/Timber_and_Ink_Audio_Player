@@ -1,0 +1,179 @@
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--sh-z-player);
+  background: var(--sh-chrome);
+  border-top: 2px solid var(--sh-brass);
+  box-shadow: var(--sh-shadow-player);
+  /* Without this the controls sit under the iOS home indicator. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.inner {
+  max-width: min(var(--sh-width-album), 100%);
+  margin: 0 auto;
+  padding: 0 var(--sh-gutter) 12px;
+}
+
+/* ── the scrub track ─────────────────────────────────────────────────────────
+   4px of visible track, but the hit area is 20px tall: a 4px target is
+   unusable with a thumb, and this is a phone-first design. */
+.scrub {
+  position: relative;
+  height: 20px;
+  margin: 0 calc(var(--sh-gutter) * -1);
+  padding: 0 var(--sh-gutter);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none; /* so a horizontal drag seeks instead of scrolling */
+}
+
+.scrubTrack {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background: var(--sh-border-soft);
+  overflow: hidden;
+}
+
+.scrubFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--sh-ink-body);
+}
+
+.nowRow {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.nowTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-editorial);
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--sh-ink-headline);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 3vw, 18px);
+  padding-top: 8px;
+}
+
+/* Every control clears 44px. */
+.control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sh-ink-muted);
+  cursor: pointer;
+  transition: color var(--sh-motion);
+}
+
+.control:hover:not(:disabled) {
+  color: var(--sh-ink-body);
+}
+
+.control:disabled {
+  color: var(--sh-disabled);
+  cursor: default;
+}
+
+/* Engaged shuffle and repeat turn brass. Brass, not amber — they are metal,
+   and only one thing in this view is allowed to be lit. */
+.engaged {
+  color: var(--sh-brass-bright);
+}
+
+/* ── the one lit element ─────────────────────────────────────────────────────
+   The amber play button. Nothing else in this design glows; if something else
+   starts to, one of them is wrong. */
+.play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--sh-amber-border);
+  border-radius: var(--radius-sm);
+  background: var(--sh-amber);
+  color: var(--text-on-action-accent);
+  cursor: pointer;
+  box-shadow: var(--sh-amber-glow);
+  transition: background-color var(--sh-motion), transform var(--sh-motion);
+}
+
+.play:hover:not(:disabled) {
+  background: var(--sh-amber-hover);
+}
+
+.play:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.play:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* ── volume ──────────────────────────────────────────────────────────────── */
+.volumeWrap {
+  position: relative;
+}
+
+.volumePopover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  min-width: 176px;
+  background: var(--sh-card);
+  border: 1px solid var(--sh-border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.volumeSlider {
+  flex: 1 1 auto;
+  min-width: 0;
+  accent-color: var(--sh-ink-body);
+}
+
+.volumeValue {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+  text-align: right;
+}
+
+/* Shown only while a track is actually buffering, so it reads as information
+   rather than decoration. */
+.stalled {
+  color: var(--sh-warning);
+}

@@ -3,8 +3,9 @@ import { ArrowLeft } from "lucide-react";
 
 import { Backdrop } from "@/chrome/Backdrop";
 import { PairedRule, PhotoMat, PressedPlate } from "@/ui/devices";
-import { formatDuration, recordMeta } from "@/data/phrase";
+import { recordMeta } from "@/data/phrase";
 import type { RecordDetail } from "@/data/types";
+import { AlbumPlayer } from "@/player/AlbumPlayer";
 import { LockItBack } from "./LockItBack";
 import styles from "../../screens.module.css";
 import album from "./album.module.css";
@@ -17,7 +18,13 @@ import type_ from "@/ui/type.module.css";
  * browser had to ask for. The player bar and audio land in milestone 3; what
  * is here is the record itself.
  */
-export function Album({ record }: { record: RecordDetail }) {
+export function Album({
+  record,
+  playable,
+}: {
+  record: RecordDetail;
+  playable: string[];
+}) {
   return (
     <Backdrop>
       <section className={styles.album}>
@@ -53,23 +60,7 @@ export function Album({ record }: { record: RecordDetail }) {
         <PairedRule className={album.break} />
         <h2 className={`${type_.signageSmall} ${album.tracksHeading}`}>The tracks</h2>
 
-        <div className={album.tracks}>
-          {record.tracks.map((track, i) => (
-            <div key={track.id} className={album.track}>
-              <span className={`${type_.meta} ${album.trackNumber}`}>
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span className={album.trackTitle}>{track.title}</span>
-              <span className={`${type_.meta} ${album.trackTime}`}>
-                {formatDuration(track.seconds)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {record.tracks.length === 0 && (
-          <div className={album.noTracks}>Nothing on this one yet.</div>
-        )}
+        <AlbumPlayer slug={record.slug} tracks={record.tracks} playable={playable} />
 
         <div className={`${type_.metaSmall} ${album.footer}`}>
           {record.artistName} · {record.year}
