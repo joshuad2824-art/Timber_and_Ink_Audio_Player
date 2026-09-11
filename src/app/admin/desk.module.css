@@ -1,0 +1,316 @@
+.page {
+  max-width: min(var(--sh-width-desk), 100%);
+  margin: 0 auto;
+  padding: 26px var(--sh-gutter) 90px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.signOut {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--sh-ink-muted);
+  transition: color var(--sh-motion);
+}
+
+.signOut:hover {
+  color: var(--sh-ink-body);
+}
+
+.eyebrow {
+  margin-top: 16px;
+}
+
+/* ── tabs ──────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 26px;
+  margin-top: 28px;
+  border-bottom: 1px solid var(--sh-hairline);
+}
+
+.tab {
+  position: relative;
+  min-height: 44px;
+  padding: 0 2px 12px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-signage);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-signage);
+  text-transform: uppercase;
+  color: var(--sh-ink-muted);
+  transition: color var(--sh-motion);
+}
+
+.tab:hover {
+  color: var(--sh-ink-body);
+}
+
+.tabActive {
+  color: var(--sh-ink-headline);
+}
+
+/* The 2px brass underline, sitting on the hairline rather than beside it. */
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--sh-brass);
+}
+
+.count {
+  margin-top: 24px;
+}
+
+/* ── artist cards ──────────────────────────────────────────────────────── */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.card {
+  background: var(--sh-card);
+  border: 1px solid var(--sh-hairline);
+  border-radius: var(--radius-md);
+  transition: transform var(--sh-motion), box-shadow var(--sh-motion);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh-shadow-card-hover);
+}
+
+.cardBody {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+}
+
+/* A stacked up/down pair. Each half clears 44px on its own. */
+.reorder {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+}
+
+.reorderButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--sh-ink-muted);
+  transition: color var(--sh-motion);
+}
+
+.reorderButton:hover:not(:disabled) {
+  color: var(--sh-ink-body);
+}
+
+.reorderButton:disabled {
+  color: var(--sh-disabled);
+  cursor: default;
+}
+
+.cardMain {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cardAlbum {
+  margin-top: 8px;
+  font-family: var(--font-editorial);
+  font-size: 20px;
+  line-height: 1.24;
+  color: var(--sh-ink-secondary);
+}
+
+.cardMeta {
+  margin-top: 8px;
+}
+
+.phraseRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.phraseLabel {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sh-ink-muted);
+}
+
+.input {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--sh-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--control-well);
+  color: var(--sh-ink-body);
+  font-family: var(--font-body);
+  font-size: 16px;
+  box-shadow: var(--control-inset);
+}
+
+.input::placeholder {
+  color: var(--sh-disabled);
+}
+
+.phraseInput {
+  composes: input;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 12px 18px;
+  border-top: 1px solid var(--sh-hairline);
+}
+
+.action {
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--sh-brass);
+  transition: color var(--sh-motion);
+}
+
+.action:hover {
+  color: var(--sh-brass-hover);
+}
+
+.actionQuiet {
+  composes: action;
+  color: var(--sh-ink-muted);
+}
+
+.actionQuiet:hover {
+  color: var(--sh-ink-body);
+}
+
+.spacer {
+  margin-left: auto;
+}
+
+.addRow {
+  margin-top: 22px;
+}
+
+.secondaryButton {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--sh-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  color: var(--sh-ink-body);
+  transition: background-color var(--sh-motion), border-color var(--sh-motion);
+}
+
+.secondaryButton:hover {
+  background: var(--sh-wash-hover);
+  border-color: var(--sh-border-strong, var(--sh-border));
+}
+
+.empty {
+  margin-top: 24px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--sh-ink-muted);
+}
+
+/* ── site text tab ─────────────────────────────────────────────────────── */
+.siteText {
+  max-width: 560px;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sh-ink-muted);
+}
+
+.textarea {
+  composes: input;
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.readsAs {
+  padding-top: 16px;
+  border-top: 1px solid var(--sh-hairline);
+}
+
+.savedNote {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--sh-ink-muted);
+}

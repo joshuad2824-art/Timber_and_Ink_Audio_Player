@@ -59,7 +59,7 @@ build plan before writing code.
 
 ## Where this is
 
-Milestone 3 of six. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
+Milestone 4 of six (first half). See `design_handoff_shadow_harbor/BUILD.md` for the rest.
 
 - [x] **1 — Shell and tokens.** Ported tokens, the four background layers, the
       decorative devices, the type scale, route skeletons.
@@ -69,7 +69,9 @@ Milestone 3 of six. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
 - [x] **3 — The player.** FLAC streaming behind the record cookie with byte
       ranges, two audio elements, drag-seek, shuffle, the three repeat modes,
       volume with persistence, linear crossfade, Media Session.
-- [ ] **4 — The desk.** Admin auth, record CRUD, reorder, upload, site text.
+- [~] **4 — The desk.** Auth, record CRUD, reorder, publish/listed flags,
+      phrase editing, the record editor, site text with autosave, the admin bar.
+      Audio and cover upload are the remaining half.
 - [ ] **5 — Offline.** Service worker, manifest, cache-per-track.
 - [ ] **6 — Hardening.** Rate limits, audit logging, a keyboard pass, Lighthouse
       on a throttled phone.
@@ -131,7 +133,26 @@ wire whole.
 | `SHADOW_HARBOR_SECRET` | Netlify (set) | Signs unlock cookies. 32+ chars. Required in production. |
 | `NETLIFY_DATABASE_URL` | Netlify (automatic) | Provisioned by Netlify DB; nothing to configure. |
 | `DATABASE_URL` | local only | Points at a local Postgres for testing. |
+| `SHADOW_HARBOR_SETUP_TOKEN` | Netlify | Lets the owner claim the desk once, on a site that has never had one. Set it yourself; see below. |
 | `SHADOW_HARBOR_LOCAL_AUDIO` | local only | A directory to use instead of Netlify Blobs, so the audio path can be tested with real files. |
+
+## Claiming the desk
+
+No admin password is seeded anywhere — there is no default to forget to change,
+and until someone claims the desk, sign-in cannot succeed at all.
+
+The trade is that an unclaimed desk would otherwise be claimable by whoever
+found it first, so claiming also demands a setup token that exists only in the
+project's environment variables:
+
+1. In Netlify, add `SHADOW_HARBOR_SETUP_TOKEN` with a long random value.
+2. Open `/admin`. It offers "Claim the desk" rather than a sign-in.
+3. Paste the token, choose a key of 12 characters or more.
+
+The claim route closes permanently once used. Changing the password afterwards
+happens from inside the desk, where the request is already authorized — and
+doing so invalidates every session signed before the change, so a password
+change really does sign everyone else out.
 
 To run the database locally:
 

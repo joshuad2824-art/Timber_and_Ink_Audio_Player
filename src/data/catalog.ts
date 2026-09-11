@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 
 import { db } from "./db";
+import { isAdmin } from "./admin";
 import { unlockCookieName, verifyUnlock } from "./crypto";
 import type { AudioFormat } from "./storage";
 import type { RecordDetail, RecordSummary, SiteText, Track } from "./types";
@@ -51,6 +52,10 @@ function toSummary(row: RecordRow): RecordSummary {
  * listener is being told what they would get, not what exists.
  */
 export async function listCatalog(): Promise<RecordSummary[]> {
+  // Signed in, the catalog shows everything — drafts and unlisted included —
+  // so the owner sees their whole shelf rather than only the public half.
+  const admin = await isAdmin();
+
   const rows = (await db().sql`
     SELECT r.slug, r.artist_name, r.album_title, r.year, r.intro,
            r.published, r.listed, r.cover_key,
@@ -58,7 +63,7 @@ export async function listCatalog(): Promise<RecordSummary[]> {
            COALESCE(SUM(t.seconds) FILTER (WHERE NOT t.hidden), 0) AS total_seconds
       FROM record r
       LEFT JOIN track t ON t.record_id = r.id
-     WHERE r.published AND r.listed
+     WHERE (r.published AND r.listed) OR ${admin}
      GROUP BY r.id
      ORDER BY r.position, r.id
   `) as unknown as RecordRow[];
@@ -77,10 +82,11 @@ export async function listCatalog(): Promise<RecordSummary[]> {
 export async function getGateRecord(
   slug: string,
 ): Promise<Pick<RecordSummary, "slug" | "artistName" | "albumTitle" | "year"> | null> {
+  const admin = await isAdmin();
   const rows = (await db().sql`
     SELECT slug, artist_name, album_title, year
       FROM record
-     WHERE slug = ${slug} AND published
+     WHERE slug = ${slug} AND (published OR ${admin})
      LIMIT 1
   `) as unknown as RecordRow[];
 
@@ -102,6 +108,19 @@ export async function isUnlocked(slug: string): Promise<boolean> {
 }
 
 /**
+ * Whether this request may read a record's contents.
+ *
+ * The owner is let through without a phrase — they set the phrases, and having
+ * to type one to check their own work would be theatre. The bypass is written
+ * once, here, rather than as an extra condition sprinkled through the queries,
+ * so there is a single line to read when asking who can open what.
+ */
+async function canRead(slug: string): Promise<boolean> {
+  if (await isUnlocked(slug)) return true;
+  return isAdmin();
+}
+
+/**
  * The full record, tracks included — and the only function here that returns
  * them.
  *
@@ -110,7 +129,10 @@ export async function isUnlocked(slug: string): Promise<boolean> {
  * exist, so every unauthorized case looks the same from outside.
  */
 export async function getUnlockedRecord(slug: string): Promise<RecordDetail | null> {
-  if (!(await isUnlocked(slug))) return null;
+  if (!(await canRead(slug))) return null;
+
+  // The owner can look at a draft; nobody else can reach one at all.
+  const admin = await isAdmin();
 
   const rows = (await db().sql`
     SELECT r.slug, r.artist_name, r.album_title, r.year, r.intro,
@@ -119,7 +141,7 @@ export async function getUnlockedRecord(slug: string): Promise<RecordDetail | nu
            COALESCE(SUM(t.seconds) FILTER (WHERE NOT t.hidden), 0) AS total_seconds
       FROM record r
       LEFT JOIN track t ON t.record_id = r.id
-     WHERE r.slug = ${slug} AND r.published
+     WHERE r.slug = ${slug} AND (r.published OR ${admin})
      GROUP BY r.id
      LIMIT 1
   `) as unknown as RecordRow[];
@@ -197,7 +219,7 @@ export async function getTrackAsset(
   trackId: string,
   format: AudioFormat,
 ): Promise<{ blobKey: string; bytes: number; mimeType: string } | null> {
-  if (!(await isUnlocked(slug))) return null;
+  if (!(await canRead(slug))) return null;
 
   const rows = (await db().sql`
     SELECT a.blob_key, a.bytes, a.mime_type
@@ -226,7 +248,7 @@ export async function getTrackAsset(
 export async function getAvailableFormats(
   slug: string,
 ): Promise<Record<string, AudioFormat[]>> {
-  if (!(await isUnlocked(slug))) return {};
+  if (!(await canRead(slug))) return {};
 
   const rows = (await db().sql`
     SELECT a.track_id, a.format

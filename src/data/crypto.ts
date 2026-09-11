@@ -133,3 +133,52 @@ export function verifyUnlock(token: string | undefined, slug: string): boolean {
 export function unlockCookieName(slug: string): string {
   return `sh_unlock_${slug.replace(/[^a-z0-9-]/gi, "")}`;
 }
+
+/* ── the desk ──────────────────────────────────────────────────────────────
+   The admin session is the same construction as an unlock cookie, with one
+   difference that matters: it carries the credential's updatedAt. Changing the
+   password therefore invalidates every session signed before the change, so
+   "change my password" actually means "sign everyone else out" rather than
+   leaving an old cookie quietly working. */
+
+const ADMIN_COOKIE = "sh_desk";
+
+export function adminCookieName(): string {
+  return ADMIN_COOKIE;
+}
+
+export function signAdminSession(expiresAt: number, credentialVersion: number): string {
+  const payload = `desk.${credentialVersion}.${expiresAt}`;
+  const mac = createHmac("sha256", secret()).update(payload).digest("base64url");
+  return `${payload}.${mac}`;
+}
+
+export function verifyAdminSession(
+  token: string | undefined,
+  credentialVersion: number,
+): boolean {
+  if (!token) return false;
+
+  const cut = token.lastIndexOf(".");
+  if (cut <= 0) return false;
+
+  const payload = token.slice(0, cut);
+  const mac = token.slice(cut + 1);
+
+  const expected = createHmac("sha256", secret()).update(payload).digest("base64url");
+  const given = Buffer.from(mac, "utf8");
+  const want = Buffer.from(expected, "utf8");
+  if (given.length !== want.length) return false;
+  if (!timingSafeEqual(given, want)) return false;
+
+  const parts = payload.split(".");
+  if (parts.length !== 3 || parts[0] !== "desk") return false;
+
+  const version = Number(parts[1]);
+  const expiresAt = Number(parts[2]);
+  if (!Number.isFinite(version) || !Number.isFinite(expiresAt)) return false;
+  if (version !== credentialVersion) return false;
+  if (Date.now() > expiresAt) return false;
+
+  return true;
+}

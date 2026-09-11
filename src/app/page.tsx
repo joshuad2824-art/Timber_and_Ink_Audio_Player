@@ -4,6 +4,8 @@ import { ChevronRight, Lock } from "lucide-react";
 import { Backdrop } from "@/chrome/Backdrop";
 import { KeyCap, PairedRule, PressedPlate } from "@/ui/devices";
 import { isUnlocked, listCatalog, getSiteText } from "@/data/catalog";
+import { isAdmin } from "@/data/admin";
+import { AdminBar } from "@/chrome/AdminBar";
 import { recordMeta } from "@/data/phrase";
 import type { RecordState } from "@/data/types";
 import styles from "./catalog.module.css";
@@ -23,13 +25,24 @@ const STATE_TONE: Record<RecordState, string> = {
 };
 
 export default async function CatalogPage() {
-  const [records, siteText] = await Promise.all([listCatalog(), getSiteText()]);
+  const [records, siteText, admin] = await Promise.all([
+    listCatalog(),
+    getSiteText(),
+    isAdmin(),
+  ]);
 
   const states = await Promise.all(
-    records.map(async (r): Promise<RecordState> =>
-      (await isUnlocked(r.slug)) ? "Open" : "Locked",
-    ),
+    records.map(async (r): Promise<RecordState> => {
+      // Draft and Unlisted are states only the owner can be in a position to
+      // see, so they are checked first — a listener never reaches this branch
+      // because those records are not in their list at all.
+      if (admin && !r.published) return "Draft";
+      if (admin && !r.listed) return "Unlisted";
+      return (await isUnlocked(r.slug)) ? "Open" : "Locked";
+    }),
   );
+
+  const drafts = records.filter((r) => !r.published).length;
 
   // The count is live; the tail is the owner's copy.
   const artists = `${records.length} ${records.length === 1 ? "artist" : "artists"}`;
@@ -37,6 +50,9 @@ export default async function CatalogPage() {
 
   return (
     <Backdrop>
+      {admin && (
+        <AdminBar note={drafts === 1 ? "1 in drafts" : `${drafts} in drafts`} />
+      )}
       <section className={styles.page}>
         <KeyCap>{siteText.eyebrow}</KeyCap>
         <h1 className={type_.pageTitle}>{siteText.title}</h1>
