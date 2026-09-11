@@ -40,7 +40,19 @@ export function SignIn() {
         return;
       }
       const body = await res.json().catch(() => ({}));
-      setNudge(typeof body?.error === "string" ? body.error : "That isn't the key.");
+      if (typeof body?.error === "string") {
+        setNudge(body.error);
+        return;
+      }
+      /* No error field means the server didn't answer in the shape it promised
+         — a crash, a proxy page, a timeout. Blaming the key would be a lie, and
+         an expensive one: it sends you off checking something that was right
+         all along. */
+      setNudge(
+        res.status >= 500
+          ? "Something went wrong on my end, not with what you typed."
+          : "That isn't the key.",
+      );
     } catch {
       setNudge("I couldn't reach the server. Try again in a moment.");
     } finally {

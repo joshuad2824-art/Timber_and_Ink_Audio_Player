@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { timingSafeEqual } from "node:crypto";
 
 import { credentialVersion, deskClaimed, setAdminPassword } from "@/data/admin";
-import { adminCookieName, signAdminSession } from "@/data/crypto";
+import { adminCookieName, secretReady, signAdminSession } from "@/data/crypto";
 import { checkRate, clearFailures, clientIp, recordFailure } from "@/data/ratelimit";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +32,22 @@ export async function POST(request: Request) {
   if (!expected) {
     return NextResponse.json(
       { ok: false, error: "No setup token is configured for this site." },
+      { status: 503 },
+    );
+  }
+
+  /* Checked before the password is written, not after. Signing the session is
+     the last step, and if it is going to fail for want of a secret it has to
+     fail before the credential exists — otherwise the desk ends up claimed by
+     a password that can never sign in, and the only way back is the database. */
+  if (!secretReady()) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "This site has no signing secret set, so I can't open a session. " +
+          "Set SHADOW_HARBOR_SECRET (32+ characters) and try again.",
+      },
       { status: 503 },
     );
   }

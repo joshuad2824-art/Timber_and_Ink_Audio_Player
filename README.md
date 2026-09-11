@@ -140,11 +140,27 @@ uploading, reassembling, storing and decoding.
 
 | Variable | Where | What |
 | --- | --- | --- |
-| `SHADOW_HARBOR_SECRET` | Netlify (set) | Signs unlock cookies. 32+ chars. Required in production. |
+| `SHADOW_HARBOR_SECRET` | Netlify | Signs unlock and desk cookies. 32+ chars. **Required** — without it no cookie can be signed, so the gate and the desk both stop working. |
 | `NETLIFY_DATABASE_URL` | Netlify (automatic) | Provisioned by Netlify DB; nothing to configure. |
 | `DATABASE_URL` | local only | Points at a local Postgres for testing. |
 | `SHADOW_HARBOR_SETUP_TOKEN` | Netlify | Lets the owner claim the desk once, on a site that has never had one. Set it yourself; see below. |
 | `SHADOW_HARBOR_LOCAL_AUDIO` | local only | A directory to use instead of Netlify Blobs, so the audio path can be tested with real files. |
+
+## If nothing will sign in
+
+Every route that mints a cookie checks for a usable `SHADOW_HARBOR_SECRET`
+before doing anything else, and says so plainly when it is missing. That check
+exists because of a real failure: with the secret unset, the claim route wrote
+the password and *then* threw on its way to signing the session — leaving a desk
+claimed by a credential that could never sign in, and a sign-in screen reporting
+"That isn't the key." for a key that was correct.
+
+The client-side fallbacks were part of it too. A response with no `error` field
+was treated as a rejection, so a 500 read as a wrong password or a wrong phrase.
+Anything 5xx now says the fault is at this end.
+
+If a desk is ever claimed with a password nobody has, `DELETE FROM
+admin_credential;` reopens the claim route.
 
 ## Claiming the desk
 
