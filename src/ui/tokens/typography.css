@@ -1,0 +1,89 @@
+/* Timber & Ink — typography. v2.1, August 2026.
+   The original six voices, kept: BEVAN (wood-type display), PLAYFAIR DISPLAY
+   (editorial headings), SPECTRAL (body), ARCHIVO (interface), OSWALD (routed
+   signage), COURIER PRIME (metadata).
+
+   One craft note carried over from the v2 pass and kept, because it is a
+   legibility rule rather than a face preference: h4 and h5 are set in ARCHIVO
+   small caps rather than shrunken editorial serif. */
+:root {
+  --font-display: "Bevan", "Bookman Old Style", Georgia, serif;
+  --font-editorial: "Playfair Display", "Times New Roman", serif;
+  --font-body: "Spectral", Georgia, serif;
+  --font-ui: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Courier Prime", "Courier New", monospace;
+  --font-signage: "Oswald", "Archivo Narrow", "Haettenschweiler", sans-serif;
+
+  /* type scale — 1.25 major third off a 17px body */
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 17px;
+  --text-md: 19px;
+  --text-lg: 22px;
+  --text-xl: 27px;
+  --text-2xl: 34px;
+  --text-3xl: 42px;
+  --text-4xl: 54px;
+  --text-5xl: 68px;
+  --text-6xl: 88px;
+
+  --leading-tight: 1.02;
+  --leading-snug: 1.16;
+  --leading-normal: 1.35;
+  --leading-relaxed: 1.62;
+
+  --tracking-tightest: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+  --tracking-wider: 0.12em;
+  --tracking-smallcaps: 0.14em;
+  --tracking-signage: 0.16em;
+  --tracking-widest: 0.2em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --weight-heading: 700;
+
+  /* semantic type roles */
+  --type-poster-family: var(--font-display);
+  --type-poster-size: var(--text-6xl);
+  --type-poster-weight: var(--weight-bold);
+  --type-poster-leading: var(--leading-tight);
+  --type-poster-tracking: var(--tracking-tightest);
+
+  --type-h1-family: var(--font-editorial);
+  --type-h1-size: var(--text-4xl);
+  --type-h2-size: var(--text-2xl);
+  --type-h3-size: var(--text-xl);
+
+  /* small headings — Archivo small caps, NOT shrunken Cormorant */
+  --type-h4-family: var(--font-ui);
+  --type-h4-size: var(--text-sm);
+  --type-h4-weight: var(--weight-semibold);
+  --type-h4-tracking: var(--tracking-smallcaps);
+  --type-h4-transform: uppercase; /* @kind other */
+
+  --type-body-family: var(--font-body);
+  --type-body-size: var(--text-base);
+  --type-body-leading: var(--leading-relaxed);
+
+  --type-eyebrow-family: var(--font-ui);
+  --type-eyebrow-size: var(--text-2xs);
+  --type-eyebrow-tracking: var(--tracking-widest);
+
+  --type-meta-family: var(--font-mono);
+  --type-meta-size: var(--text-xs);
+  --type-meta-tracking: var(--tracking-wide);
+
+  /* routed signpost: uppercase, tracked, 500 weight, never below 14px */
+  --type-signpost-family: var(--font-signage);
+  --type-signpost-size: var(--text-lg);
+  --type-signpost-weight: var(--weight-medium);
+  --type-signpost-tracking: var(--tracking-signage);
+  --type-signpost-leading: var(--leading-snug);
+}

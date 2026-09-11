@@ -1,0 +1,223 @@
+/* Timber & Ink — colour system. v2.0, August 2026.
+   THREE brand colours, everything else derived:
+     teal  #142A2B — the page, and type on paper
+     cream #f6f3ec — the paper, and type on the page
+     brass #7a6201 — the ampersand, the mark, the engravings
+     amber #C6862F — the flame. The ONE lit thing in the dark
+
+   Ramps interpolated in Oklch (hue and chroma held steady across steps),
+   every step contrast-checked against the night page.
+
+   THE ONE RULE: #7a6201 measures 2.56:1 on #142A2B — it fails as text on
+   the dark page. Brass has a side. On cream it is a text colour (5.30:1).
+   On teal it is decoration: engravings, marks, filled button backgrounds.
+   Anything on the night page that must be READ steps up to brass-500 or
+   brass-400.
+
+   BRASS vs AMBER — they are not the same warmth. Brass is metal: the
+   ampersand, the engraving line, rules, links, eyebrows. Amber is flame:
+   the single lit CTA, the focus ring, the lamplight wash. Never more than
+   ONE amber element in a view. If two things glow, neither does.
+
+   Amber is also the only anchor that passes on the night page at its true
+   value — #C6862F measures 4.91:1 on #142A2B, where #7a6201 measures 2.56.
+   The lit thing is legible because it is lit.
+
+   The system is DARK BY DEFAULT. Add data-stock="paper" to any subtree
+   that should be printed matter instead of night. */
+
+:root {
+  /* --- Teal — surfaces, and type on paper --- */
+  --teal-950: #001011;  /* sunken wells, input interiors */
+  --teal-900: #051B1C;  /* card on page */
+  --teal-850: #0C2223;  /* subtle recess */
+  --teal-800: #142A2B;  /* THE PAGE — anchor */
+  --teal-700: #22393A;  /* raised surface, hover fill */
+  --teal-600: #374E4F;  /* borders on dark */
+  --teal-500: #516869;  /* dividers, disabled fill */
+  --teal-400: #748B8C;  /* 4.17:1 — decorative only, under the text floor */
+  --teal-300: #9CB1B2;  /* 6.70:1 — muted text on dark */
+  --teal-200: #C1D4D4;  /* 9.77:1 — secondary text on dark */
+
+  /* --- Cream — paper, and type on the page --- */
+  --cream-050: #FDFAF3;
+  --cream-100: #f6f3ec;  /* THE PAPER — anchor. Headings on dark */
+  --cream-200: #E9E6DF;  /* body text on dark */
+  --cream-300: #D8D6CF;
+  --cream-400: #C2BFB8;
+  --cream-500: #A6A39C;  /* 5.98:1 — muted text on paper */
+
+  /* --- Brass — the ampersand, the engraving, the single accent --- */
+  --brass-900: #4F3800;
+  --brass-800: #644D00;
+  --brass-700: #7a6201;  /* ANCHOR. Text on cream ONLY. Fills and marks on dark */
+  --brass-600: #957C2B;  /* 3.72:1 — large text / UI borders on dark */
+  --brass-500: #AE9546;  /* 5.15:1 — links and accents on dark */
+  --brass-400: #C5AE67;  /* 6.90:1 — primary CTA on dark, focus ring */
+  --brass-300: #DAC891;  /* lamplight glow, hover on dark */
+  --brass-200: #EDDFB5;  /* lit-plate wash */
+
+  /* --- Spruce — old-growth ground. Restored alongside the four: a second
+         dark family for full-bleed washes and forest surfaces. Not the page;
+         the page stays --teal-800. --- */
+  --spruce-950: #0A100C;
+  --spruce-900: #121A16;
+  --spruce-850: #161F1A;
+  --spruce-800: #1B261F;
+  --spruce-700: #24332A;
+  --spruce-600: #33463A;
+  --spruce-500: #475C4C;
+  --spruce-400: #5E7563;
+
+  /* --- Driftwood — weathered barnwood, shingle, dock plank. Texture only:
+         plank fills, wood grain, disabled wells. Never body text. --- */
+  --driftwood-800: #2A2622;
+  --driftwood-700: #3A342E;
+  --driftwood-600: #4E463D;
+  --driftwood-500: #6B6255;
+  --driftwood-400: #8C8172;
+  --driftwood-300: #ADA292;
+
+  /* --- Amber — the lantern, the candle jar, the lit shop window.
+         GLOW ONLY. Sampled from the mood board. --- */
+  --amber-700: #8F5300;  /* border on an amber fill */
+  --amber-600: #AA6C01;  /* 3.48:1 — large text / UI edges on dark */
+  --amber-500: #C6862F;  /* ANCHOR — the flame. 4.91:1 on the page */
+  --amber-400: #DE9D4B;  /* 6.47:1 — focus ring, lit CTA hover */
+  --amber-300: #F1BA7A;  /* 8.63:1 — lamplight highlight */
+  --amber-200: #FFD5A3;  /* the lit plate, lamplight wash */
+
+  /* --- Status. Functional, not brand. Earthy, never neon.
+         Paired: each needs a different step per surface. --- */
+  --danger-night: #DE6A58;   /* 4.52 on page */
+  --danger-paper: #932417;   /* 7.56 on cream */
+  --warning-night: #C28245;  /* 4.71 */
+  --warning-paper: #7C4200;  /* 7.19 */
+  --success-night: #81A569;  /* 5.39 */
+  --success-paper: #3C5D23;  /* 6.81 */
+
+  /* ================= semantic aliases — NIGHT (default) ================= */
+  /* surfaces */
+  --surface-page: var(--teal-800);
+  --surface-raised: var(--teal-700);
+  --surface-sunken: var(--teal-950);
+  --surface-card: var(--teal-900);
+  --surface-inverse: var(--cream-100);        /* paper set into the dark */
+  --surface-inverse-raised: var(--cream-050);
+  --surface-paper: var(--cream-100);
+  --surface-accent: var(--amber-200);         /* the lit plate */
+  --surface-overlay: rgba(0, 16, 17, 0.78);
+  --control-well: var(--teal-950);
+
+  /* text */
+  --text-body: var(--cream-200);
+  --text-heading: var(--cream-100);
+  --text-muted: var(--teal-200);
+  --text-quiet: var(--teal-300);
+  --text-accent: var(--brass-400);
+  --text-on-dark: var(--cream-100);
+  --text-on-dark-muted: var(--teal-200);
+  --text-on-primary: var(--teal-800);
+  --text-on-accent: var(--teal-950);
+  --text-on-action-accent: var(--teal-950); /* 6.33:1 on amber-500 */
+  --text-on-brass: var(--teal-950);
+  --text-on-paper: var(--teal-800);
+  --text-link: var(--brass-500);
+  --text-link-hover: var(--brass-300);
+
+  /* borders + rules */
+  --border-hairline: rgba(246, 243, 236, 0.10);
+  --border-default: rgba(246, 243, 236, 0.20);
+  --border-strong: rgba(246, 243, 236, 0.42);
+  --border-on-dark: rgba(246, 243, 236, 0.20);
+  --rule-accent: var(--brass-600);
+
+  /* interactive */
+  --action-primary: var(--cream-100);         /* a routed sign board: bone on dark */
+  --action-primary-hover: var(--cream-050);
+  --action-primary-active: var(--cream-300);
+  --action-primary-border: var(--cream-100);
+  --action-accent: var(--amber-500);          /* the single lit CTA */
+  --action-accent-hover: var(--amber-400);
+  --action-accent-border: var(--amber-700);
+  --action-inverse-bg: var(--teal-900);
+  --action-inverse-fg: var(--cream-100);
+  --action-secondary-bg: transparent;
+  --action-disabled-bg: rgba(246, 243, 236, 0.09);
+  --action-disabled-text: var(--teal-400);
+  --wash-hover: rgba(246, 243, 236, 0.07);
+  --wash-hover-strong: rgba(246, 243, 236, 0.12);
+  --wash-selected: var(--cream-100);
+  --text-on-selected: var(--teal-800);
+  --focus-ring: var(--amber-400);
+  --plate-offset: rgba(246, 243, 236, 0.26);
+
+  --logo-filter: none; /* @kind other */
+  --engraving-filter: brightness(0) invert(1) sepia(0.24) saturate(0.65) brightness(0.94); /* @kind other */
+
+  /* status */
+  --status-danger: var(--danger-night);
+  --status-warning: var(--warning-night);
+  --status-success: var(--success-night);
+  --status-info: var(--brass-500);
+}
+
+/* ================= PAPER stock — printed matter, cream and teal =================
+   Scope it: <div data-stock="paper"> … </div>. Same tokens, daylight values.
+   NOTE THE FLIP: on paper #7a6201 becomes a legitimate text colour and the
+   deep teal carries the type. */
+[data-stock="paper"] {
+  --surface-page: var(--cream-100);
+  --surface-raised: var(--cream-050);
+  --surface-sunken: var(--cream-200);
+  --surface-card: var(--cream-050);
+  --surface-inverse: var(--teal-800);
+  --surface-inverse-raised: var(--teal-700);
+  --surface-paper: var(--cream-050);
+  --surface-accent: var(--amber-200);
+  --surface-overlay: rgba(0, 16, 17, 0.68);
+  --control-well: var(--cream-050);
+
+  --text-body: var(--teal-800);
+  --text-heading: var(--teal-900);
+  --text-muted: #4E6B6C;            /* 5.20:1 on cream */
+  --text-quiet: var(--cream-500);
+  --text-accent: var(--brass-700);  /* 5.30:1 — the flip */
+  --text-on-primary: var(--cream-100);
+  --text-on-accent: var(--teal-900);
+  --text-on-action-accent: var(--cream-050); /* on amber-700 */
+  --text-on-brass: var(--teal-900);
+  --text-link: var(--brass-700);
+  --text-link-hover: var(--brass-900);
+
+  --border-hairline: rgba(20, 42, 43, 0.10);
+  --border-default: rgba(20, 42, 43, 0.18);
+  --border-strong: rgba(20, 42, 43, 0.38);
+  --rule-accent: var(--brass-700);
+
+  --action-primary: var(--teal-800);
+  --action-primary-hover: var(--teal-900);
+  --action-primary-active: var(--teal-950);
+  --action-primary-border: var(--teal-800);
+  --action-accent: var(--amber-700);   /* 5.56:1 with cream lettering */
+  --action-accent-hover: var(--amber-600);
+  --action-accent-border: var(--amber-700);
+  --action-inverse-bg: var(--cream-100);
+  --action-inverse-fg: var(--teal-800);
+  --action-disabled-bg: var(--cream-400);
+  --action-disabled-text: #7E7B74;
+  --wash-hover: rgba(20, 42, 43, 0.06);
+  --wash-hover-strong: rgba(20, 42, 43, 0.11);
+  --wash-selected: var(--teal-800);
+  --text-on-selected: var(--cream-100);
+  --focus-ring: var(--amber-700);
+  --plate-offset: var(--teal-800);
+  --logo-filter: none; /* @kind other */
+  --engraving-filter: none; /* @kind other */
+
+  --status-danger: var(--danger-paper);
+  --status-warning: var(--warning-paper);
+  --status-success: var(--success-paper);
+  --status-info: var(--brass-700);
+}
+[data-stock="paper"] { background: var(--surface-page); color: var(--text-body); }

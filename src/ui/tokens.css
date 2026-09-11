@@ -1,0 +1,168 @@
+/* Shadow Harbor — the token layer.
+   Ported once from design_handoff_shadow_harbor/design/_ds/timber-ink-…/tokens/.
+   Reference these; never write a raw hex value anywhere else in the app.
+
+   The design system is the binding source for type, spacing, radii, shadows and
+   motion. Shadow Harbor runs a night-shifted set of neutrals on top of it: the
+   page sits darker than the system's --teal-800 so the one lit thing — the amber
+   play button — has somewhere to be lit against. Those shifted values are the
+   --sh-* layer below, and they are the only colours the app's own CSS uses.
+
+   Fonts are not imported here. The design system loads seven Google families via
+   @import; we load the same seven, plus Grape Nuts, through next/font in
+   src/app/layout.tsx, which binds them to the same --font-* variable names. */
+
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/surfaces.css";
+@import "./tokens/base.css";
+
+:root {
+  /* ===================== faces =====================
+     next/font in src/app/layout.tsx self-hosts each family and exposes it as a
+     --font-*-loaded variable. Rebind the design system's names onto those,
+     keeping its fallback stacks verbatim, so every rule downstream keeps
+     referencing --font-display, --font-mono and the rest. */
+  --font-display: var(--font-display-loaded), "Bookman Old Style", Georgia, serif;
+  --font-editorial: var(--font-editorial-loaded), "Times New Roman", serif;
+  --font-body: var(--font-body-loaded), Georgia, serif;
+  --font-ui: var(--font-ui-loaded), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-mono-loaded), "Courier New", monospace;
+  --font-signage: var(--font-signage-loaded), "Archivo Narrow", "Haettenschweiler", sans-serif;
+
+  /* ===================== surfaces — night shifted ===================== */
+  --sh-behind: #08100f;        /* html, body — behind the page */
+  --sh-page: #0b1819;          /* the app root */
+  --sh-chrome: #0a1617;        /* fixed bars: player, admin */
+  --sh-card: #0d1c1d;          /* admin cards, offline panel, volume popover */
+  --sh-paper: #f6f3ec;         /* the two sign-in cards */
+  --sh-print: #fffdf6;         /* the cover-art mat */
+
+  /* ===================== ink ===================== */
+  --sh-ink-headline: #f4f0e6;  /* page titles */
+  --sh-ink-label: #f1ede2;     /* strong labels, signage */
+  --sh-ink-body: #e8e3d7;      /* body copy, rules, active track marker */
+  --sh-ink-secondary: #c3cbc6; /* album titles in lists */
+  --sh-ink-muted: #9daba6;     /* metadata, timecodes, footers */
+  --sh-ink-hand: #d8d2c4;      /* hand-lettered asides */
+
+  /* ink on paper stock */
+  --sh-paper-ink: #142a2b;
+  --sh-paper-label: #2c3f3e;
+  --sh-paper-hint: #4a5b58;
+  --sh-paper-error: #9a4b2c;
+
+  /* ===================== metal, flame, state ===================== */
+  --sh-brass: #ae9546;         /* links, the 2px player-bar rule, active tab */
+  --sh-brass-hover: #dac891;
+  --sh-brass-bright: #c5ae67;  /* eyebrows, engaged toggles, saved bookmark */
+
+  /* The flame. The play button and nothing else. */
+  --sh-amber: #c6862f;
+  --sh-amber-border: #8f5300;
+  --sh-amber-hover: #de9d4b;
+  --sh-amber-glow: 0 0 24px rgba(198, 134, 47, 0.42);
+
+  --sh-warning: #de9d4b;       /* draft badges, hidden track, destructive confirm */
+  --sh-toast: #d9a354;         /* hand-lettered toast */
+  --sh-disabled: #33504f;      /* disabled chevron */
+
+  /* ===================== rules and washes ===================== */
+  --sh-hairline: rgba(232, 227, 215, 0.14);
+  --sh-hairline-soft: rgba(232, 227, 215, 0.1);
+  --sh-hairline-faint: rgba(232, 227, 215, 0.12);
+  --sh-border: rgba(232, 227, 215, 0.22);
+  --sh-border-soft: rgba(232, 227, 215, 0.16);
+  --sh-rule-under: rgba(232, 227, 215, 0.34); /* the 1px under a paired rule */
+  --sh-wash-hover: rgba(232, 227, 215, 0.04);
+  --sh-wash-hover-strong: rgba(232, 227, 215, 0.07);
+  --sh-wash-active-row: rgba(232, 227, 215, 0.06);
+
+  /* ===================== the hand ===================== */
+  /* The one family the design system does not carry. */
+  --font-hand: var(--font-hand-loaded), "Bradley Hand", cursive;
+
+  /* ===================== layout ===================== */
+  --sh-gutter: clamp(20px, 4vw, 34px);
+  --sh-width-catalog: 940px;
+  --sh-width-album: 880px;
+  --sh-width-desk: 1080px;
+  --sh-width-card: 400px;
+  --sh-width-card-admin: 380px;
+
+  /* The album screen reserves this much for the fixed player bar. */
+  --sh-player-clearance: 168px;
+
+  /* ===================== type sizes the design actually uses ===================== */
+  --sh-text-page-title: clamp(34px, 10vw, 50px);
+  --sh-text-gate-title: clamp(32px, 10vw, 48px);
+  --sh-text-album-title: clamp(30px, 8.4vw, 42px);
+  --sh-text-hand: clamp(22px, 6vw, 27px);
+  --sh-text-hand-tight: clamp(22px, 6vw, 26px);
+
+  /* ===================== shadows this design adds ===================== */
+  --sh-shadow-card-hover: 0 18px 34px rgba(0, 0, 0, 0.5);
+  --sh-shadow-paper: 0 26px 54px rgba(0, 0, 0, 0.52);
+  --sh-shadow-print: 0 26px 52px rgba(0, 0, 0, 0.5), 0 3px 0 rgba(0, 0, 0, 0.3);
+  --sh-shadow-player: 0 -18px 40px rgba(0, 0, 0, 0.6);
+  --sh-shadow-admin-bar: 0 10px 24px rgba(0, 0, 0, 0.45);
+  --sh-shadow-tape: 0 3px 8px rgba(0, 0, 0, 0.42);
+
+  /* ===================== z-index ===================== */
+  --sh-z-content: 3;
+  --sh-z-admin-bar: 12;
+  --sh-z-player: 20;
+
+  /* Motion: transform and shadow only. Nothing else animates. */
+  --sh-motion: 240ms var(--ease-out);
+}
+
+/* The page sits on the night shift, not the system's --teal-800. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--sh-behind);
+}
+
+body {
+  color: var(--sh-ink-body);
+  font-family: var(--font-body);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--sh-brass);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--sh-brass-hover);
+}
+
+/* The amber focus ring, on every focusable thing, everywhere. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--sh-page), 0 0 0 4px var(--sh-amber-hover);
+}
+
+input[type="range"] {
+  accent-color: var(--sh-ink-body);
+}
+
+/* Paper stock keeps the design system's daylight flip; it only needs the
+   surface anchored to Shadow Harbor's own paper. */
+[data-stock="paper"] {
+  background: var(--sh-paper);
+  color: var(--sh-paper-ink);
+}

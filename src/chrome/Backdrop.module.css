@@ -1,0 +1,58 @@
+/* The four background layers, stacked over the page in this order.
+   All of them are inert: absolute, inset 0, no pointer events. Content sits
+   above them at --sh-z-content. */
+
+.root {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: var(--sh-page);
+  color: var(--sh-ink-body);
+  font-family: var(--font-body);
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 1 — lamplight. Three radial washes: the big one low on the left, a second
+   pooling at the bottom, and a cold sage fall from the top right. */
+.lamplight {
+  background:
+    radial-gradient(880px 1040px at 6% 220px, rgba(198, 134, 47, 0.115), rgba(0, 0, 0, 0) 68%),
+    radial-gradient(70% 44% at 18% 88%, rgba(198, 134, 47, 0.1), rgba(0, 0, 0, 0) 72%),
+    radial-gradient(46% 30% at 84% 4%, rgba(120, 150, 140, 0.055), rgba(0, 0, 0, 0) 74%);
+}
+
+/* 2 — desk wear. One stretched pass, never tiled. */
+.wear {
+  opacity: 0.62;
+  background-image: url("/textures/desk-wear.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* 3 — grain. Tiled at its native 256px. */
+.grain {
+  opacity: 0.3;
+  background-image: url("/textures/desk-grain.png");
+  background-size: 256px 256px;
+  background-repeat: repeat;
+}
+
+/* 4 — vignette. Pulls the corners down so the lit thing reads as lit. */
+.vignette {
+  background: radial-gradient(
+    122% 88% at 50% 40%,
+    rgba(0, 0, 0, 0) 38%,
+    rgba(0, 0, 0, 0.46) 100%
+  );
+}
+
+.content {
+  position: relative;
+  z-index: var(--sh-z-content);
+}

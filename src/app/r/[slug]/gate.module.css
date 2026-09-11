@@ -1,0 +1,55 @@
+.eyebrow {
+  margin-top: 18px;
+}
+
+.line {
+  max-width: 28ch;
+}
+
+.card {
+  margin-top: 30px;
+}
+
+.label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sh-paper-label);
+}
+
+/* Placeholders for the real controls. The card has to hold its finished shape
+   now, or the shell will not tell us whether the proportions are right. */
+.field {
+  margin-top: 10px;
+  height: 44px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--control-well);
+}
+
+/* The error slot keeps its height when empty so the card never reflows. */
+.errorSlot {
+  margin-top: 9px;
+  min-height: 19px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--sh-paper-error);
+}
+
+.button {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--action-primary);
+  color: var(--text-on-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+}

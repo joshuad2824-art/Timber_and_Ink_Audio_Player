@@ -1,0 +1,108 @@
+.page {
+  max-width: min(var(--sh-width-catalog), 100%);
+  margin: 0 auto;
+  padding: 56px var(--sh-gutter) 48px;
+}
+
+.intro {
+  max-width: 30ch;
+}
+
+.list {
+  margin-top: 34px;
+  border-bottom: 1px solid var(--sh-hairline);
+}
+
+/* A record. The whole row is the control — 60px of it minimum, and the
+   chevron is decoration, not the target. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 8px;
+  border: 0;
+  border-top: 1px solid var(--sh-hairline);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition: background-color var(--sh-motion);
+}
+
+.row:hover {
+  background: var(--sh-wash-hover);
+}
+
+.rowBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The row is an anchor, so its parts are spans; they still need to stack. */
+.rowBody > * {
+  display: block;
+}
+
+.rowAlbum {
+  margin-top: 7px;
+  font-family: var(--font-editorial);
+  font-size: 20px;
+  line-height: 1.24;
+  color: var(--sh-ink-secondary);
+  text-wrap: pretty;
+}
+
+.rowMeta {
+  margin-top: 9px;
+}
+
+.rowAside {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--sh-ink-muted);
+}
+
+.empty {
+  margin-top: 28px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--tracking-wide);
+  color: var(--sh-ink-muted);
+}
+
+.footer {
+  margin-top: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--sh-hairline-faint);
+}
+
+.doorRow {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+/* The way to the desk. Quiet on purpose — it is not for the listener. */
+.door {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--sh-ink-muted);
+  transition: color var(--sh-motion);
+}
+
+.door:hover {
+  color: var(--sh-brass-hover);
+}
