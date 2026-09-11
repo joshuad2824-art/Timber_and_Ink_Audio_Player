@@ -180,3 +180,19 @@
   composes: remove;
   color: var(--sh-warning);
 }
+
+.uploadRow {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--sh-hairline);
+}
+
+/* Which encodings a track actually has behind it. */
+.trackFormats {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sh-brass-bright);
+}

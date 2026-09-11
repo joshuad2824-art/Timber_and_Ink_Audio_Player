@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Eye, EyeOff, Trash2 } from "lucide-react";
 
 import { PressedPlate } from "@/ui/devices";
 import { Switch } from "@/ui/Switch";
+import { Upload } from "@/desk/Upload";
 import { ToastSlot, useToast } from "@/chrome/Toast";
 import { formatDuration } from "@/data/phrase";
 import type { AdminRecord, AdminTrack } from "@/data/admin";
@@ -153,6 +154,10 @@ export function Editor({ record: initial }: { record: FullRecord }) {
       {record.tracks.length === 0 && (
         <div className={desk.empty}>No tracks yet. Add one, or upload the files.</div>
       )}
+
+      <div className={styles.uploadRow}>
+        <Upload recordId={record.id} onDone={reload} />
+      </div>
 
       <div className={styles.trackActions}>
         <button
@@ -377,6 +382,10 @@ function TrackRow({
           <Eye size={16} strokeWidth={1.5} />
         )}
       </button>
+
+      {track.formats.length > 0 && (
+        <span className={styles.trackFormats}>{track.formats.join(" · ")}</span>
+      )}
 
       <button
         type="button"

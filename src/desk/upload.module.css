@@ -1,0 +1,103 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Hidden, but still the real control: the label is its button. */
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fileInput:focus-visible + label {
+  box-shadow: 0 0 0 2px var(--sh-page), 0 0 0 4px var(--sh-amber-hover);
+}
+
+.wrap label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.wrap label[data-disabled="true"] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.explain {
+  margin: 0;
+  max-width: 46ch;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.7;
+  letter-spacing: 0.06em;
+  color: var(--sh-ink-muted);
+}
+
+.jobs {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.job {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--sh-hairline);
+}
+
+.jobName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--sh-ink-body);
+}
+
+.jobStage {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sh-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.jobError {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  color: var(--sh-warning);
+}
+
+.meter {
+  grid-column: 1 / -1;
+  height: 2px;
+  background: var(--sh-border-soft);
+  overflow: hidden;
+}
+
+/* Cream, not amber. Progress is information, not the lit thing. */
+.meterFill {
+  display: block;
+  height: 100%;
+  background: var(--sh-ink-body);
+  transition: width var(--sh-motion);
+}
