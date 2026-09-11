@@ -59,7 +59,7 @@ build plan before writing code.
 
 ## Where this is
 
-Milestone 4 of six (first half). See `design_handoff_shadow_harbor/BUILD.md` for the rest.
+Milestone 4 of six, complete. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
 
 - [x] **1 — Shell and tokens.** Ported tokens, the four background layers, the
       decorative devices, the type scale, route skeletons.
@@ -69,9 +69,9 @@ Milestone 4 of six (first half). See `design_handoff_shadow_harbor/BUILD.md` for
 - [x] **3 — The player.** FLAC streaming behind the record cookie with byte
       ranges, two audio elements, drag-seek, shuffle, the three repeat modes,
       volume with persistence, linear crossfade, Media Session.
-- [~] **4 — The desk.** Auth, record CRUD, reorder, publish/listed flags,
-      phrase editing, the record editor, site text with autosave, the admin bar.
-      Audio and cover upload are the remaining half.
+- [x] **4 — The desk.** Auth, record CRUD, reorder, publish/listed flags,
+      phrase editing, the record editor, site text with autosave, the admin bar,
+      and WAV upload with in-browser FLAC/MP3 encoding.
 - [ ] **5 — Offline.** Service worker, manifest, cache-per-track.
 - [ ] **6 — Hardening.** Rate limits, audit logging, a keyboard pass, Lighthouse
       on a throttled phone.
@@ -108,10 +108,20 @@ leak. Supporting that:
 
 ## Audio
 
-The owner uploads WAV masters. The desk derives FLAC and MP3 from them in the
-browser (ffmpeg.wasm) and uploads only those — a Netlify function caps a request
-body around 6 MB and a 42-minute WAV is 727 MB, so the master never crosses the
-wire whole.
+The owner uploads WAV masters. The desk derives FLAC and MP3 from them **in the
+browser** and uploads only those — a Netlify function caps a request body at a
+few megabytes and a 42-minute WAV is 727 MB, so the master never crosses the
+wire at all.
+
+The encoders are libFLAC compiled to wasm (about 240 KB) and a pure-JS MP3
+encoder, not ffmpeg.wasm — which is 64 MB unpacked for two codecs out of
+several hundred. The WAV is parsed directly rather than decoded through Web
+Audio, which can resample and hands back floats; lossless has to mean the
+samples in the file, not a round trip through a format it was never in.
+
+Verified end to end against the reference `flac` CLI: a 24-bit/48kHz master
+comes back bit-identical after encoding in Chromium, chunking at 3 MB,
+uploading, reassembling, storing and decoding.
 
 - **Streaming is FLAC.** Lossless, and it decodes bit-identically to the master
   at roughly half the bytes, so streaming raw WAV would cost 1.7x for the same
