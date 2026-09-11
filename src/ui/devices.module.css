@@ -158,3 +158,17 @@
   object-fit: cover;
   background: #e6e2d6;
 }
+
+/* An empty mount, for a record whose cover has not been made yet. */
+.matEmpty {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(20, 42, 43, 0.045) 0 10px,
+      rgba(20, 42, 43, 0) 10px 20px
+    ),
+    #e9e5d9;
+}

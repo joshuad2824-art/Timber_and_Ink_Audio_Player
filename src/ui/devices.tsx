@@ -134,8 +134,15 @@ export function PhotoMat({
   return (
     <div className={styles.matWrap} style={{ transform: `rotate(${rotate}deg)` }}>
       <div className={styles.mat}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.matImage} src={src} alt={alt} />
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className={styles.matImage} src={src} alt={alt} />
+        ) : (
+          /* No cover yet. An <img> with no src is invalid and renders as a
+             broken icon, so an empty mount stands in until there is artwork —
+             it reads as a print waiting to be made rather than a mistake. */
+          <div className={styles.matEmpty} role="img" aria-label={`${alt} — no cover art yet`} />
+        )}
         {caption}
       </div>
       <Tape placement="topLeftWide" tone="olive" />
