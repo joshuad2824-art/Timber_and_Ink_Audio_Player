@@ -1,0 +1,95 @@
+/* The type roles this design actually uses. Seven faces, each with one job;
+   the rule is that a face never does another face's work.
+
+   Bevan      the page title, uppercase, wood-type
+   Playfair   album and track titles — the editorial voice
+   Spectral   paragraph copy
+   Archivo    control labels, badges, key-caps
+   Oswald     routed signage: artist names, section headings, desk tabs
+   Courier    all metadata, timecodes, hints, footers
+   Grape Nuts the first-person asides and toasts */
+
+.pageTitle {
+  margin: 16px 0 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--sh-text-page-title);
+  line-height: 0.98;
+  letter-spacing: var(--tracking-tight);
+  text-transform: uppercase;
+  color: var(--sh-ink-headline);
+  text-wrap: pretty;
+}
+
+.gateTitle {
+  composes: pageTitle;
+  font-size: var(--sh-text-gate-title);
+}
+
+.albumTitle {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 700;
+  font-size: var(--sh-text-album-title);
+  line-height: 1.04;
+  letter-spacing: var(--tracking-tight);
+  color: var(--sh-ink-headline);
+  text-wrap: pretty;
+}
+
+/* The first person. Never used for instruction, only for the owner's own
+   voice — asides, notes, toasts. */
+.hand {
+  margin: 20px 0 0;
+  font-family: var(--font-hand);
+  font-size: var(--sh-text-hand-tight);
+  line-height: 1.34;
+  color: var(--sh-ink-hand);
+  text-wrap: pretty;
+}
+
+.handWide {
+  composes: hand;
+  font-size: var(--sh-text-hand);
+  line-height: 1.32;
+}
+
+/* Routed signage. Always uppercase, always tracked, never under 13px. */
+.signage {
+  font-family: var(--font-signage);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-signage);
+  text-transform: uppercase;
+  color: var(--sh-ink-label);
+}
+
+.signageSmall {
+  composes: signage;
+  font-size: 13px;
+}
+
+/* Metadata. Uppercase Courier, tracked. The floor is 10px and this is the
+   only role allowed down there. */
+.meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--sh-ink-muted);
+}
+
+.metaSmall {
+  composes: meta;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+/* Control labels. */
+.uiLabel {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}

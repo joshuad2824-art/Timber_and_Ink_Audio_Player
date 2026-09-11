@@ -1,0 +1,160 @@
+/* The recurring decorative devices. Every screen leans on these, so the recipes
+   live here once and nowhere else. Values are verbatim from the design spec. */
+
+/* ── Key-cap chip ───────────────────────────────────────────────────────────
+   The eyebrow label. A typewriter key lying on the desk: cream plastic, lit
+   from above, tipped a degree off square. */
+.keyCap {
+  display: inline-block;
+  padding: 7px 15px;
+  border-radius: var(--radius-sm);
+  transform: rotate(-1.2deg);
+  background: linear-gradient(180deg, #e8e3d2 0%, #d6d0bc 55%, #cbc4ae 100%);
+  color: #1d2a28;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0 3px 9px rgba(0, 0, 0, 0.48);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* ── Pressed-plate chip ─────────────────────────────────────────────────────
+   The same construction inverted: stamped metal on the dark page, lit from
+   above but sunk rather than raised. Carries status. Its ink is passed in. */
+.pressedPlate {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: var(--radius-sm);
+  transform: rotate(-1.4deg);
+  background: linear-gradient(180deg, #31403d 0%, #1e2a28 55%, #182220 100%);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ── Tape strip ─────────────────────────────────────────────────────────────
+   Two 1px crosshatches over a directional fill, so it reads as woven cloth
+   tape rather than a coloured rectangle. Sits half off the corner of whatever
+   it holds down; the parent needs position: relative. */
+.tape {
+  position: absolute;
+  box-shadow: var(--sh-shadow-tape);
+  pointer-events: none;
+}
+
+.tapeCream {
+  background:
+    repeating-linear-gradient(90deg, rgba(42, 46, 40, 0.5) 0 1px, rgba(0, 0, 0, 0) 1px 7px),
+    repeating-linear-gradient(0deg, rgba(42, 46, 40, 0.5) 0 1px, rgba(0, 0, 0, 0) 1px 7px),
+    linear-gradient(178deg, rgba(226, 219, 198, 0.94), rgba(203, 195, 170, 0.9));
+}
+
+.tapeOlive {
+  background:
+    repeating-linear-gradient(90deg, rgba(38, 42, 30, 0.5) 0 1px, rgba(0, 0, 0, 0) 1px 8px),
+    repeating-linear-gradient(0deg, rgba(38, 42, 30, 0.5) 0 1px, rgba(0, 0, 0, 0) 1px 8px),
+    linear-gradient(178deg, rgba(150, 143, 104, 0.94), rgba(126, 120, 85, 0.9));
+}
+
+/* The four placements the design uses, each with its own angle and bite. */
+.tapeTopLeft {
+  top: -14px;
+  left: -16px;
+  width: 112px;
+  height: 29px;
+  transform: rotate(-17deg);
+}
+
+.tapeTopLeftWide {
+  top: -13px;
+  left: -16px;
+  width: 126px;
+  height: 32px;
+  transform: rotate(-21deg);
+}
+
+.tapeBottomRight {
+  bottom: -11px;
+  right: -14px;
+  width: 112px;
+  height: 29px;
+  transform: rotate(-9deg);
+}
+
+.tapeTopRight {
+  top: -13px;
+  right: 22px;
+  width: 100px;
+  height: 27px;
+  transform: rotate(9deg);
+}
+
+/* ── Paired rule ────────────────────────────────────────────────────────────
+   The masthead break: a 2px cream rule with a faint 1px echo 3px under it. */
+.pairedRule {
+  margin-top: 18px;
+}
+
+.pairedRule > .ruleHeavy {
+  height: 2px;
+  background: var(--sh-ink-body);
+}
+
+.pairedRule > .ruleLight {
+  margin-top: 3px;
+  height: 1px;
+  background: var(--sh-rule-under);
+}
+
+/* ── Paper card ─────────────────────────────────────────────────────────────
+   Printed matter set into the night page. Carries data-stock="paper", which
+   flips the whole design system to daylight inside it. */
+.paperWrap {
+  position: relative;
+}
+
+.paper {
+  position: relative;
+  background: var(--sh-paper);
+  padding: clamp(22px, 6vw, 28px);
+  box-shadow: var(--sh-shadow-paper);
+}
+
+/* ── Photo mat ──────────────────────────────────────────────────────────────
+   A print in a cream mat, bottom border deeper than the sides the way a real
+   mount is cut. Square corners: this one is never rounded. */
+.matWrap {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.mat {
+  position: relative;
+  background: var(--sh-print);
+  padding: 15px 15px 20px;
+  border-radius: var(--radius-none);
+  box-shadow: var(--sh-shadow-print);
+}
+
+.matImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #e6e2d6;
+}

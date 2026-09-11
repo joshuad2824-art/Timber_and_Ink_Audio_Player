@@ -1,7 +1,7 @@
 # Shadow Harbor — working notes for Claude Code
 
-Move this file to the repository root. It is the standing brief; `design_handoff_shadow_harbor/README.md`
-is the design spec and `BUILD.md` is the implementation plan. Read all three before writing code.
+This is the standing brief; `design_handoff_shadow_harbor/README.md`
+is the design spec and `design_handoff_shadow_harbor/BUILD.md` is the implementation plan. Read all three before writing code.
 
 ## What this is
 

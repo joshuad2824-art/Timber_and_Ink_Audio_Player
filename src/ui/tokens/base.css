@@ -1,0 +1,54 @@
+/* Timber & Ink — base. v2.0, August 2026.
+   h4/h5 now set in Archivo small caps rather than shrunken Cormorant.
+   ORIGINAL HEADER FOLLOWS.
+   Timber & Ink — base element defaults built on the tokens.
+   Consumers get sensible page stock, prose, links and rules for free. */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-body);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3 {
+  font-family: var(--font-editorial);
+  color: var(--text-heading);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-5);
+  text-wrap: balance;
+}
+h1 { font-size: var(--text-4xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4, h5 {
+  font-family: var(--type-h4-family);
+  font-size: var(--type-h4-size);
+  font-weight: var(--type-h4-weight);
+  letter-spacing: var(--type-h4-tracking);
+  text-transform: uppercase;
+}
+p { margin: 0 0 var(--space-6); max-width: var(--measure-prose); text-wrap: pretty; }
+a { color: var(--text-link); text-decoration-thickness: 1px; text-underline-offset: 3px; transition: color var(--duration-fast) var(--ease-standard); }
+a:hover { color: var(--text-link-hover); }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(--focus-ring-shadow); }
+strong, b { font-weight: var(--weight-bold); }
+small { font-size: var(--text-sm); }
+hr { border: none; border-top: var(--border-hair); margin: var(--space-9) 0; }
+code, kbd, pre { font-family: var(--font-mono); font-size: 0.92em; }
+blockquote {
+  margin: var(--space-8) 0;
+  padding-left: var(--space-6);
+  border-left: var(--border-brass);
+  font-family: var(--font-editorial);
+  font-size: var(--text-lg);
+  font-style: italic;
+  color: var(--text-heading);
+}
+::selection { background: var(--brass-300); color: var(--teal-950); }
+img { max-width: 100%; }
