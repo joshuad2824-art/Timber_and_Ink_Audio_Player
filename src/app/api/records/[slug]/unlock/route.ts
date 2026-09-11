@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 import { getPhraseHash } from "@/data/catalog";
-import { unlockCookieName, signUnlock, verifyPhrase } from "@/data/crypto";
+import { secretReady, signUnlock, unlockCookieName, verifyPhrase } from "@/data/crypto";
 import { normalizePhrase, PHRASE_EMPTY, PHRASE_WRONG } from "@/data/phrase";
 import { checkRate, clearFailures, clientIp, recordFailure } from "@/data/ratelimit";
 
@@ -43,6 +43,15 @@ export async function POST(
   const normalized = normalizePhrase(phrase);
   if (!normalized) {
     return NextResponse.json({ ok: false, error: PHRASE_EMPTY }, { status: 400 });
+  }
+
+  // Without a secret the cookie cannot be signed, and the listener would be
+  // told their phrase was wrong when the phrase was fine.
+  if (!secretReady()) {
+    return NextResponse.json(
+      { ok: false, error: "Something's wrong on my end. Try again shortly." },
+      { status: 503 },
+    );
   }
 
   const ip = clientIp(await headers());

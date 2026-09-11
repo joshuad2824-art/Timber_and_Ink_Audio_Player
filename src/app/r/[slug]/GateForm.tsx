@@ -51,7 +51,7 @@ export function GateForm({ slug }: { slug: string }) {
       setNudge(
         typeof body?.error === "string"
           ? body.error
-          : "Something went wrong on my end. Try again in a moment.",
+          : "Something went wrong on my end, not with the phrase you typed.",
       );
     } catch {
       setNudge("I couldn't reach the server. Check your connection and try again.");

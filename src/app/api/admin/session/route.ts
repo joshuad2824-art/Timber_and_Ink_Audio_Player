@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 import { checkAdminPassword, credentialVersion } from "@/data/admin";
-import { adminCookieName, signAdminSession } from "@/data/crypto";
+import { adminCookieName, secretReady, signAdminSession } from "@/data/crypto";
 import { KEY_WRONG } from "@/data/phrase";
 import { checkRate, clearFailures, clientIp, recordFailure } from "@/data/ratelimit";
 
@@ -23,6 +23,21 @@ export async function POST(request: Request) {
 
   if (!password) {
     return NextResponse.json({ ok: false, error: KEY_WRONG }, { status: 401 });
+  }
+
+  // A missing secret is a broken site, not a wrong key. Saying so here is the
+  // difference between a five-minute fix and an afternoon spent retyping a
+  // password that was right all along.
+  if (!secretReady()) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "This site has no signing secret set, so I can't open a session. " +
+          "Set SHADOW_HARBOR_SECRET (32+ characters) and try again.",
+      },
+      { status: 503 },
+    );
   }
 
   const ip = clientIp(await headers());

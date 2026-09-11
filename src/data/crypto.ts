@@ -45,6 +45,24 @@ function secret(): Buffer {
   return Buffer.from("shadow-harbor-development-secret-not-for-production", "utf8");
 }
 
+/**
+ * Whether a usable signing secret is configured, without throwing.
+ *
+ * Routes that are going to mint a cookie check this first. Otherwise the
+ * failure surfaces halfway through the work: the claim route wrote a password
+ * and then threw on the way to signing a session, leaving a site claimed by a
+ * credential nobody could use — which is exactly what happened in production
+ * the first time this was deployed without the secret set.
+ */
+export function secretReady(): boolean {
+  try {
+    secret();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Hash a phrase for storage. Salt is per-phrase and stored alongside. */
 export async function hashPhrase(normalized: string): Promise<string> {
   const salt = randomBytes(SALT_BYTES);
