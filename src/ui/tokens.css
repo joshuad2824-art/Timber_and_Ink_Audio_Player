@@ -32,7 +32,6 @@
   --font-signage: var(--font-signage-loaded), "Archivo Narrow", "Haettenschweiler", sans-serif;
 
   /* ===================== surfaces — night shifted ===================== */
-  --sh-behind: #08100f;        /* html, body — behind the page */
   --sh-page: #0b1819;          /* the app root */
   --sh-chrome: #0a1617;        /* fixed bars: player, admin */
   --sh-card: #0d1c1d;          /* admin cards, offline panel, volume popover */
@@ -166,12 +165,21 @@
   --sh-motion: 240ms var(--ease-out);
 }
 
-/* The page sits on the night shift, not the system's --teal-800. */
+/* The page sits on the night shift, not the system's --teal-800 — and both
+   elements take the page's own colour rather than a darker tone behind it.
+
+   `html` is the one that matters and it is easy to miss: when the root element
+   has a background, that is what paints the canvas, and the body's background
+   then covers only the body's own box. So the strip iOS opens at the top when
+   a scroll rubber-bands past the beginning is painted by this rule, not by the
+   body rule below it — and while these two carried different greens, pulling
+   down at the top of a record opened a band of the wrong one directly beneath
+   the clock. One surface everywhere means one colour here. */
 html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--sh-behind);
+  background: var(--sh-page);
 }
 
 body {
@@ -215,20 +223,3 @@ input[type="range"] {
   color: var(--sh-paper-ink);
 }
 
-/* The one surface, all the way to the edges of the screen.
-
-   base.css leaves the body on the design system's own page stock (#142A2B),
-   two shades off the night-shifted page the app actually draws (#0B1819).
-   Nothing ever saw the difference, because the backdrop covers the body on
-   every screen — until the status bar went translucent. Now the page runs the
-   full height of the display, and the two places the body still shows are both
-   at the top of it: the moment before the backdrop paints, and the strip iOS
-   opens under the clock when a scroll rubber-bands past the top. Two dark
-   greens meeting in a band under the status bar reads as a seam, which is the
-   exact thing translucency was for.
-
-   So the body takes the page's own colour. Not --sh-behind, which is darker
-   again and would draw the same seam a shade deeper. */
-body {
-  background: var(--sh-page);
-}
