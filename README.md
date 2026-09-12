@@ -45,7 +45,8 @@ src/
   ui/         tokens.css, the type scale, and the decorative devices
   chrome/     background layers, admin bar, toast slot
   data/       types, phrase normalization, the catalog client
-  player/     audio engine, player bar, progress, volume   (milestone 3)
+  player/     audio engine, player bar, progress, volume
+  offline/    the Cache API client, the keep panel, the bookmark button
 netlify/
   database/migrations/
 design_handoff_shadow_harbor/
@@ -59,7 +60,8 @@ build plan before writing code.
 
 ## Where this is
 
-Milestone 4 of six, complete. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
+Milestone 5 of six, complete apart from the download links. See
+`design_handoff_shadow_harbor/BUILD.md` for the rest.
 
 - [x] **1 — Shell and tokens.** Ported tokens, the four background layers, the
       decorative devices, the type scale, route skeletons.
@@ -72,7 +74,10 @@ Milestone 4 of six, complete. See `design_handoff_shadow_harbor/BUILD.md` for th
 - [x] **4 — The desk.** Auth, record CRUD, reorder, publish/listed flags,
       phrase editing, the record editor, site text with autosave, the admin bar,
       and WAV upload with in-browser FLAC/MP3 encoding.
-- [ ] **5 — Offline.** Service worker, manifest, cache-per-track.
+- [x] **5 — Offline.** Service worker, manifest, home-screen icons, the
+      "Keep it on your device" panel, a bookmark on every track row, and a
+      count read from the real Cache API. Cover art upload too. Still to come:
+      the "Download the files" rows.
 - [ ] **6 — Hardening.** Rate limits, audit logging, a keyboard pass, Lighthouse
       on a throttled phone.
 
@@ -136,6 +141,83 @@ uploading, reassembling, storing and decoding.
   start of the next. They swap roles on each advance; the idle one is where the
   next track preloads and where a crossfade ramps up.
 
+## Offline
+
+A bookmark on a track row puts that track on the device; "Keep it on your
+device" opens the panel that explains the other half — adding the site to the
+home screen, where it opens without an address bar — and reports how many
+tracks are really there.
+
+- **The count is a measurement, not a note we kept.** `4 of 10 tracks are on
+  this device.` is computed from `cache.keys()` every time it changes. A browser
+  evicts caches when a device runs short of room and does not ask first, so a
+  figure remembered in `localStorage` would go on promising music for a journey
+  where there would be no way to get it.
+- **Lossless where there is room for it.** A record is kept as FLAC unless
+  `navigator.storage.estimate()` says the album will not fit inside two thirds
+  of what is free, and a refused write falls back to the MP3 once rather than
+  reporting failure. Whichever it gets, the whole album gets the same one — half
+  an album in lossless is the one outcome nobody would choose on purpose.
+- **The worker slices ranges itself.** `cache.match` ignores a Range header and
+  returns the whole file, which an `<audio>` element reads as "no ranges here"
+  and answers by refetching everything on every seek. Some browsers synthesise
+  the 206 now; not all of them do. The slicing goes through `Blob.slice`, so
+  seeking into a 40 MB track does not pull 40 MB into memory to hand back 64 KB.
+- **Only what was asked for.** Listening to a track does not cache it; a track
+  lands on the device because somebody chose to keep it. The catalog, the unlock
+  endpoint and every admin route always go to the network — a stale answer to
+  "is this record open on this device" would be a security bug wearing a
+  performance feature's clothes.
+- **"Lock it back" empties the device.** The cookie is what stops the server
+  sending tracks again, but the kept audio would still play — the worker answers
+  from the cache before it checks anything, and a file already here has no
+  cookie left to check — and the last album page would still be served offline.
+  Closing a record has to mean the device is empty of it.
+- **The offline page carries its own assets.** Caching the fallback document
+  alone fails in the worst way available: the HTML arrives, the framework
+  starts, its route chunk is missing, and the error boundary replaces the one
+  screen whose whole job is to be calm when nothing loads. The worker reads the
+  page's markup at install and keeps whatever it asks for, so there is no build
+  step to keep in step.
+
+## Cover art
+
+The owner taps the mount in the record editor and gets their phone's own
+picker — Photo Library, Take Photo, Choose File. It is a `<label>` wrapping
+`<input type="file" accept="image/*">`, which is what makes the whole 200px
+square the tap target; a drop still works on a desktop, where a drop is the
+natural gesture and a tap is not.
+
+- **The picture is scaled in the browser, for the same reason the audio is.**
+  A phone writes eight megabytes of 3024×4032 and a Netlify function's request
+  body caps at a few, so the upload route would refuse the original outright.
+  The desk re-encodes to fit a 1400px long edge — the mat shows 420px — which
+  lands at a few hundred kilobytes and makes the upload a single PUT rather
+  than the stitched-together affair the audio path has to be.
+- **EXIF orientation is honoured, and then everything else is dropped.**
+  `createImageBitmap(file, { imageOrientation: "from-image" })` rather than
+  drawing raw pixels, because a phone held sideways writes landscape pixels and
+  a tag saying "rotate this" — ignore it and the sleeve is on its side. What
+  comes out the other end has no EXIF at all, which matters for a second
+  reason: a camera writes the place and the minute into every photo, and a
+  record sleeve is not where the owner should publish where they live.
+- **A new storage key on every upload.** Blobs is eventually consistent, and
+  replacing a cover is the commonest thing an owner does — writing to the same
+  key would sometimes go on serving the picture they had just decided against.
+  The row is repointed and the old blob swept after, never before.
+- **The URL carries the upload time.** `/api/records/<slug>/cover?v=…`, cached
+  hard and privately. A sleeve is looked at on every visit and re-sending it
+  each time would be absurd; the version is what makes caching it safe.
+- **Behind the same read check as the tracks.** The design puts cover art on
+  the album screen only, never the catalog, so there is nothing to gain by
+  making it public and a sleeve to give away by doing it. The gate carries no
+  cover URL at all — whether art exists is not something a locked record should
+  answer.
+- **The declared type is checked against the bytes.** The route stores the
+  content type and serves it straight back, so a JPEG uploaded as a PNG would
+  have the site telling a browser something untrue about what it is handing
+  over. Eight bytes of header settle it.
+
 ## Environment
 
 | Variable | Where | What |
@@ -144,7 +226,7 @@ uploading, reassembling, storing and decoding.
 | `NETLIFY_DATABASE_URL` | Netlify (automatic) | Provisioned by Netlify DB; nothing to configure. |
 | `DATABASE_URL` | local only | Points at a local Postgres for testing. |
 | `SHADOW_HARBOR_SETUP_TOKEN` | Netlify | Lets the owner claim the desk once, on a site that has never had one. Set it yourself; see below. |
-| `SHADOW_HARBOR_LOCAL_AUDIO` | local only | A directory to use instead of Netlify Blobs, so the audio path can be tested with real files. |
+| `SHADOW_HARBOR_LOCAL_AUDIO` | local only | A directory to use instead of Netlify Blobs, so the media path can be tested with real files. It holds one subdirectory per store — `shadow-harbor-audio/` and `shadow-harbor-covers/`. |
 
 ## If nothing will sign in
 
@@ -203,8 +285,15 @@ SHADOW_HARBOR_SECRET=any-32-plus-character-string-for-dev npm run dev
   published phrase protects nothing. Treat the three seeded records as open to
   anyone who reads the repo, and reset every phrase from the desk (milestone 4)
   before real music goes behind one.
-- **Cover art and audio.** None was supplied with the handoff. The desk will
-  have upload paths for both, but there is nothing to listen to until real media
-  exists.
+- **Real cover art and real music.** Both upload paths work now; nothing was
+  supplied with the handoff, so there is still nothing to look at or listen to
+  until the owner puts it there.
+- **The download links.** `Download the files` — the MP3 format chip, the
+  whole-album row and the per-track rows — is the last piece of milestone 5.
+  The sizes are ready for it: `track_asset.bytes` is real, and
+  `getAvailableFormats` now returns it.
+- **Likes.** The `record_like` table exists and the decision is made — real
+  counts, idempotent per device, never showing who — but the endpoint and the
+  heart toggle are unbuilt.
 - **Answers to the open questions** at the bottom of `CLAUDE.md` — whether
   phrases expire, whether download links ship, whether like counts are shared.

@@ -6,7 +6,14 @@ import { db } from "./db";
 import { isAdmin } from "./admin";
 import { unlockCookieName, verifyUnlock } from "./crypto";
 import type { AudioFormat } from "./storage";
-import type { RecordDetail, RecordSummary, SiteText, Track } from "./types";
+import type {
+  ListenFormat,
+  RecordDetail,
+  RecordSummary,
+  SiteText,
+  Track,
+  TrackAssetSizes,
+} from "./types";
 
 /* Every query in this file is shaped by one rule from the brief: a locked
    record's tracks and file keys must never reach the client. The enforcement
@@ -26,6 +33,7 @@ type RecordRow = {
   published: boolean;
   listed: boolean;
   cover_key: string | null;
+  cover_updated_at: string | Date | null;
   track_count: string | number;
   total_seconds: string | number | null;
 };
@@ -40,8 +48,28 @@ function toSummary(row: RecordRow): RecordSummary {
     totalSeconds: Number(row.total_seconds ?? 0),
     published: row.published,
     listed: row.listed,
-    coverUrl: undefined,
+    coverUrl: coverUrl(row.slug, row.cover_key, row.cover_updated_at),
   };
+}
+
+/**
+ * Where a record's cover is fetched from, or undefined if there isn't one.
+ *
+ * A stable path with the upload time hung off it. The route is behind the same
+ * read check as the tracks, so the response is cached hard — a cover is looked
+ * at on every visit and re-sending it each time would be absurd — and the
+ * version is what lets that be safe: replace the art and this changes, leave it
+ * alone and nothing re-downloads. The storage key itself never appears; it is
+ * not the listener's business where the bytes sit.
+ */
+function coverUrl(
+  slug: string,
+  key: string | null,
+  updatedAt: string | Date | null,
+): string | undefined {
+  if (!key || !updatedAt) return undefined;
+  const version = new Date(updatedAt).getTime();
+  return `/api/records/${slug}/cover?v=${Number.isFinite(version) ? version : 0}`;
 }
 
 /**
@@ -58,7 +86,7 @@ export async function listCatalog(): Promise<RecordSummary[]> {
 
   const rows = (await db().sql`
     SELECT r.slug, r.artist_name, r.album_title, r.year, r.intro,
-           r.published, r.listed, r.cover_key,
+           r.published, r.listed, r.cover_key, r.cover_updated_at,
            COUNT(t.id) FILTER (WHERE NOT t.hidden) AS track_count,
            COALESCE(SUM(t.seconds) FILTER (WHERE NOT t.hidden), 0) AS total_seconds
       FROM record r
@@ -136,7 +164,7 @@ export async function getUnlockedRecord(slug: string): Promise<RecordDetail | nu
 
   const rows = (await db().sql`
     SELECT r.slug, r.artist_name, r.album_title, r.year, r.intro,
-           r.published, r.listed, r.cover_key,
+           r.published, r.listed, r.cover_key, r.cover_updated_at,
            COUNT(t.id) FILTER (WHERE NOT t.hidden) AS track_count,
            COALESCE(SUM(t.seconds) FILTER (WHERE NOT t.hidden), 0) AS total_seconds
       FROM record r
@@ -244,23 +272,66 @@ export async function getTrackAsset(
   };
 }
 
-/** Which encodings exist for each track of an unlocked record. */
-export async function getAvailableFormats(
-  slug: string,
-): Promise<Record<string, AudioFormat[]>> {
+/**
+ * Which encodings exist for each track of an unlocked record, and how large
+ * each one actually is.
+ *
+ * The sizes are read rather than estimated. The prototype derived them from
+ * duration at a fixed bitrate, which is a fair guess for MP3 and a bad one for
+ * FLAC — how well a track compresses depends on the music, and a quiet record
+ * can come in at half what a loud one does. "Keep it on your device" has to
+ * quote a number the device will really have to find room for.
+ *
+ * `wav` is filtered out. It is the archival master: never streamed, never
+ * cached, and not something a listener should be offered.
+ */
+export async function getAvailableFormats(slug: string): Promise<TrackAssetSizes> {
   if (!(await canRead(slug))) return {};
 
   const rows = (await db().sql`
-    SELECT a.track_id, a.format
+    SELECT a.track_id, a.format, a.bytes
       FROM track_asset a
       JOIN track t  ON t.id = a.track_id
       JOIN record r ON r.id = t.record_id
-     WHERE r.slug = ${slug} AND r.published AND NOT t.hidden
-  `) as unknown as Array<{ track_id: string; format: AudioFormat }>;
+     WHERE r.slug = ${slug}
+       AND r.published
+       AND NOT t.hidden
+       AND a.format IN ('flac', 'mp3')
+  `) as unknown as Array<{
+    track_id: string;
+    format: ListenFormat;
+    bytes: string | number;
+  }>;
 
-  const out: Record<string, AudioFormat[]> = {};
+  const out: TrackAssetSizes = {};
   for (const row of rows) {
-    (out[row.track_id] ??= []).push(row.format);
+    (out[row.track_id] ??= {})[row.format] = Number(row.bytes);
   }
   return out;
+}
+
+/**
+ * Resolve a record's stored cover, for the cover route.
+ *
+ * Behind the same read check as the tracks. Cover art is part of the record,
+ * and the catalog does not show it — the design puts it on the album screen
+ * only — so there is nothing to gain by making it public and a sleeve to give
+ * away by doing it.
+ */
+export async function getCoverAsset(
+  slug: string,
+): Promise<{ blobKey: string; mimeType: string } | null> {
+  if (!(await canRead(slug))) return null;
+
+  const rows = (await db().sql`
+    SELECT cover_key, cover_mime
+      FROM record
+     WHERE slug = ${slug} AND cover_key IS NOT NULL
+     LIMIT 1
+  `) as unknown as Array<{ cover_key: string; cover_mime: string }>;
+
+  const row = rows[0];
+  if (!row) return null;
+
+  return { blobKey: row.cover_key, mimeType: row.cover_mime };
 }

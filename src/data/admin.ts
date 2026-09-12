@@ -98,6 +98,7 @@ export async function listAllRecords(): Promise<AdminRecord[]> {
   const rows = (await db().sql`
     SELECT r.id, r.slug, r.artist_name, r.album_title, r.year, r.intro,
            r.published, r.listed, r.position,
+           r.cover_key, r.cover_updated_at,
            (r.phrase_hash IS NOT NULL) AS has_phrase,
            COUNT(t.id) FILTER (WHERE NOT t.hidden) AS track_count,
            COALESCE(SUM(t.seconds) FILTER (WHERE NOT t.hidden), 0) AS total_seconds
@@ -120,6 +121,15 @@ export async function listAllRecords(): Promise<AdminRecord[]> {
     position: Number(row.position),
     trackCount: Number(row.track_count),
     totalSeconds: Number(row.total_seconds ?? 0),
+    /* The same URL a listener gets, because the desk bypasses the read check
+       rather than having a path of its own. What the owner sees in the editor
+       is literally what the album screen will serve. */
+    coverUrl:
+      row.cover_key && row.cover_updated_at
+        ? `/api/records/${String(row.slug)}/cover?v=${new Date(
+            row.cover_updated_at as string,
+          ).getTime()}`
+        : undefined,
   }));
 }
 
@@ -400,4 +410,75 @@ export async function updateSiteText(text: SiteText): Promise<void> {
        SET eyebrow = ${text.eyebrow}, title = ${text.title},
            intro = ${text.intro}, footer = ${text.footer}
   `;
+}
+
+/**
+ * Put a cover on a record, or take it off.
+ *
+ * The previous blob is swept after the row has been repointed, never before. If
+ * the sweep fails the site is left holding one orphaned image, which costs a
+ * few hundred kilobytes; doing it the other way round risks a row pointing at
+ * bytes that are already gone, which costs a listener a broken sleeve.
+ *
+ * Read-then-write rather than one clever statement. There is one owner and no
+ * concurrency to protect against here, and two plain queries say what they do.
+ */
+export async function setCover(
+  id: string,
+  key: string,
+  mime: string,
+): Promise<boolean> {
+  const previous = await currentCoverKey(id);
+  if (previous === null) return false;
+
+  await db().sql`
+    UPDATE record
+       SET cover_key = ${key},
+           cover_mime = ${mime},
+           cover_updated_at = NOW()
+     WHERE id = ${id}
+  `;
+
+  if (previous && previous !== key) await sweepCover(previous);
+  return true;
+}
+
+export async function clearCover(id: string): Promise<boolean> {
+  const previous = await currentCoverKey(id);
+  if (!previous) return false;
+
+  await db().sql`
+    UPDATE record
+       SET cover_key = NULL, cover_mime = NULL, cover_updated_at = NULL
+     WHERE id = ${id}
+  `;
+
+  await sweepCover(previous);
+  return true;
+}
+
+/**
+ * The key a record currently points at.
+ *
+ * Three answers, all of them meaningful: a string is the blob to sweep once
+ * it has been replaced, `""` is a record with no cover yet, and `null` is no
+ * such record.
+ */
+async function currentCoverKey(id: string): Promise<string | null> {
+  const rows = (await db().sql`
+    SELECT cover_key FROM record WHERE id = ${id} LIMIT 1
+  `) as unknown as Array<{ cover_key: string | null }>;
+
+  if (rows.length === 0) return null;
+  return rows[0].cover_key ?? "";
+}
+
+/** Best effort. An image nobody points at is litter, not a fault. */
+async function sweepCover(key: string): Promise<void> {
+  try {
+    const { deleteCover } = await import("./storage");
+    await deleteCover(key);
+  } catch {
+    /* ignored on purpose */
+  }
 }

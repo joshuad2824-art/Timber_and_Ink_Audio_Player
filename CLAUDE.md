@@ -33,6 +33,7 @@ src/
   routes/      catalog · record (gate + album) · admin (desk · editor · sign-in)
   player/      audio engine (two elements, crossfade), player bar, progress, volume
   data/        catalog client, types, phrase check
+  offline/     Cache API client, keep panel, bookmark button
   ui/          tokens.css + the small set of primitives the design actually uses
   chrome/      admin bar, toast slot, background layers (washes · wear · grain · vignette)
 ```
@@ -83,6 +84,11 @@ The prototype checks phrases in the browser and prints them on screen. In produc
   pure-JS MP3 encoder do the same job for about a hundredth of the download.
   The WAV is parsed directly rather than decoded through Web Audio, which can
   resample and returns floats — lossless has to mean the samples in the file.
+- **Cover art is scaled in the owner's browser too**, to a 1400px long edge,
+  and stored behind the same read check as the tracks — the design shows a
+  sleeve on the album screen only, never the catalog. The re-encode also
+  strips the EXIF a phone writes, which is where the location of the room the
+  photo was taken in would otherwise be.
 - **Like counts are real but not social.** Persisted server-side, idempotent per
   device. Nobody is shown who else liked anything.
 

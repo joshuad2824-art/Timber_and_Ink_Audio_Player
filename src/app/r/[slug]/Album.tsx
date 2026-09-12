@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { Backdrop } from "@/chrome/Backdrop";
-import { PairedRule, PhotoMat, PressedPlate } from "@/ui/devices";
+import { PhotoMat, PressedPlate } from "@/ui/devices";
 import { recordMeta } from "@/data/phrase";
-import type { RecordDetail } from "@/data/types";
+import type { RecordDetail, TrackAssetSizes } from "@/data/types";
 import { AlbumPlayer } from "@/player/AlbumPlayer";
 import { AdminBar } from "@/chrome/AdminBar";
 import { LockItBack } from "./LockItBack";
@@ -16,16 +16,16 @@ import type_ from "@/ui/type.module.css";
  * The album, once the phrase has been accepted.
  *
  * Server-rendered, so the track list arrives as markup rather than as data the
- * browser had to ask for. The player bar and audio land in milestone 3; what
- * is here is the record itself.
+ * browser had to ask for. Everything from the options row down is the client's
+ * — it needs the engine and the device's cache — and lives in AlbumPlayer.
  */
 export function Album({
   record,
-  playable,
+  formats,
   admin = false,
 }: {
   record: RecordDetail;
-  playable: string[];
+  formats: TrackAssetSizes;
   admin?: boolean;
 }) {
   return (
@@ -44,6 +44,7 @@ export function Album({
 
         <div className={album.cover}>
           <PhotoMat
+            src={record.coverUrl}
             alt={`Cover art for ${record.albumTitle}`}
             caption={
               <div className={album.matCaption}>
@@ -61,10 +62,7 @@ export function Album({
 
         {record.intro && <p className={type_.handWide}>{record.intro}</p>}
 
-        <PairedRule className={album.break} />
-        <h2 className={`${type_.signageSmall} ${album.tracksHeading}`}>The tracks</h2>
-
-        <AlbumPlayer slug={record.slug} tracks={record.tracks} playable={playable} />
+        <AlbumPlayer slug={record.slug} tracks={record.tracks} formats={formats} />
 
         <div className={`${type_.metaSmall} ${album.footer}`}>
           {record.artistName} · {record.year}

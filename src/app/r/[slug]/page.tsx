@@ -32,12 +32,12 @@ export default async function RecordPage({
   // Returns null for a locked record and for one that does not exist alike.
   const record = await getUnlockedRecord(slug);
   if (record) {
-    /* Which tracks actually have a streamable encoding. Resolved here so the
-       list can show the difference between a track that is silent and one that
-       is simply not up yet, without the client asking. */
+    /* Which encodings each track actually has, and what they weigh. Resolved
+       here so the list can show the difference between a track that is silent
+       and one that is simply not up yet, and so "Keep it on your device" can
+       quote a real size, without the client asking for either. */
     const formats = await getAvailableFormats(slug);
-    const playable = Object.keys(formats).filter((id) => formats[id].includes("flac"));
-    return <Album record={record} playable={playable} admin={await isAdmin()} />;
+    return <Album record={record} formats={formats} admin={await isAdmin()} />;
   }
 
   // Not unlocked. Drafts are invisible here too, so a 404 cannot be used to

@@ -1,0 +1,113 @@
+/* The secondary button in the rule-bounded row. Sentence case, because the
+   voice does not shout, and 44px of target even though the fill is 34px. */
+.keepToggle {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--sh-border-soft);
+  border-radius: 3px;
+  background: var(--sh-card);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sh-ink-headline);
+  transition:
+    background-color var(--sh-motion),
+    border-color var(--sh-motion),
+    transform var(--sh-motion),
+    box-shadow var(--sh-motion);
+}
+
+/* The design system's button hover: up-left one pixel onto a hard offset
+   plate. Nothing changes size and nothing changes opacity. */
+.keepToggle:hover {
+  background: var(--surface-raised);
+  border-color: var(--sh-border);
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-plate);
+}
+
+.keepToggle:active {
+  transform: none;
+  box-shadow: var(--shadow-press);
+}
+
+.panel {
+  margin-top: 14px;
+  padding: 18px;
+  background: var(--sh-card);
+  border: 1px solid var(--sh-hairline);
+  border-radius: 5px;
+}
+
+/* The panel's own eyebrow. Brass, because this is a section label inside a
+   card rather than a control label, and the shared .uiLabel is neither. */
+.panelEyebrow {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sh-brass-bright);
+}
+
+.panelBody {
+  margin: 10px 0 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--sh-ink-secondary);
+}
+
+.panelBody em {
+  font-style: italic;
+  color: var(--sh-ink-headline);
+}
+
+/* The live count. Mono and muted like the rest of the metadata, but a
+   sentence rather than a label — so no uppercase. The design system reserves
+   tracked capitals for one-or-two-word metadata, and "3 of 10 tracks are on
+   this device." shouted in capitals reads as an alarm about storage instead of
+   a quiet fact about it. */
+.panelCount {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--sh-ink-muted);
+}
+
+/* 44px of target around an 18px glyph, per the brief's floor on every control. */
+.bookmark {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--sh-ink-muted);
+  transition:
+    background-color var(--sh-motion),
+    color var(--sh-motion);
+}
+
+.bookmark:hover:not(:disabled) {
+  background: var(--sh-wash-hover);
+}
+
+/* Brass, not amber: kept is a state, and the lit element on this screen is the
+   play button. */
+.bookmarkKept {
+  color: var(--sh-brass-bright);
+}
+
+/* Mid-download. Dimmed rather than hidden, so the row does not reflow and the
+   tap that started it is plainly still happening. */
+.bookmark:disabled {
+  cursor: progress;
+  color: var(--sh-disabled);
+}

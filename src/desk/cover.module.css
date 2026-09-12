@@ -1,0 +1,122 @@
+.column {
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The mount is the control. A label wrapping the input, so the whole square is
+   the tap target — 200px of it, well past the 44px floor. */
+.mount {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  border: 1px dashed var(--sh-border);
+  border-radius: var(--radius-sm);
+  background: var(--sh-card);
+  cursor: pointer;
+  color: var(--sh-ink-muted);
+  text-align: center;
+  transition:
+    border-color var(--sh-motion),
+    background-color var(--sh-motion);
+}
+
+.mount:hover {
+  border-color: var(--sh-border);
+  background: var(--surface-raised);
+}
+
+/* A file over the square. Solid rather than dashed: the border stops being an
+   invitation and becomes a boundary. */
+.mountOver {
+  border-style: solid;
+  border-color: var(--sh-brass-bright);
+  background: var(--surface-raised);
+}
+
+.mountBusy {
+  cursor: progress;
+}
+
+/* The input is in the accessibility tree and reachable by keyboard; it just
+   isn't what you look at. Not display:none, which would take it out of both. */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The amber focus ring lands on the mount, not on the invisible input. */
+.mount:focus-within {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--sh-page), 0 0 0 4px var(--sh-amber-hover);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  color: var(--sh-disabled);
+}
+
+/* Square and centre-cropped, which is how the album screen shows it. What the
+   owner sees here is the sleeve, not their original framing. */
+.preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.replace {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 7px 0;
+  background: rgba(10, 22, 23, 0.82);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sh-ink-body);
+}
+
+.remove {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sh-ink-muted);
+  transition: color var(--sh-motion);
+}
+
+.remove:hover:not(:disabled) {
+  color: var(--sh-warning);
+}

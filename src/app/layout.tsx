@@ -9,6 +9,7 @@ import {
   Spectral,
 } from "next/font/google";
 
+import { RegisterServiceWorker } from "@/offline/Register";
 import "@/ui/tokens.css";
 
 /* The design system's fonts.css pulls seven families from Google over an
@@ -77,6 +78,16 @@ export const metadata: Metadata = {
   title: "Recordings",
   description: "A small catalog. Every record sits behind its own phrase.",
   robots: { index: false, follow: false },
+
+  /* Added to a home screen this opens without an address bar, which is the
+     whole point of the offline work: the fixed player bar sits at the bottom of
+     the screen instead of above browser chrome. A black status bar rather than
+     a translucent one, so the back link does not need to dodge the notch.
+
+     No `icons` here on purpose: icon.png and apple-icon.png sit next to this
+     file and Next links them itself. Naming them here would replace that
+     rather than add to it, and the one left out gets no link at all. */
+  appleWebApp: { capable: true, title: "Recordings", statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {
@@ -91,7 +102,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={fontVariables}>
-      <body>{children}</body>
+      <body>
+        <RegisterServiceWorker />
+        {children}
+      </body>
     </html>
   );
 }

@@ -54,7 +54,7 @@
 }
 
 .break {
-  margin-top: 34px;
+  margin-top: 30px;
 }
 
 .tracksHeading {
@@ -70,10 +70,24 @@
 .track {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 6px;
   min-height: 60px;
-  padding: 8px;
+  padding: 8px 8px 8px 6px;
   border-top: 1px solid var(--sh-hairline);
+}
+
+/* The part of the row that plays. A sibling of the bookmark rather than its
+   parent: one button inside another is not something a keyboard or a screen
+   reader can take apart, and the bookmark has to be reachable without
+   starting the track. */
+.trackBody {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px;
+  border-radius: 3px;
 }
 
 .trackNumber {
@@ -112,10 +126,15 @@
 }
 
 .trackPlayable {
-  cursor: pointer;
   transition: background-color var(--sh-motion);
 }
 
+.trackPlayable .trackBody {
+  cursor: pointer;
+}
+
+/* Hovering the row lights the row, so the whole 60px reads as one target —
+   but the cursor only promises playback over the part that plays. */
 .trackPlayable:hover {
   background: var(--sh-wash-hover);
 }
@@ -144,10 +163,18 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 18px;
   flex-wrap: wrap;
-  margin: 22px 0 6px;
+  margin-top: 26px;
   padding: 14px 0;
   border-top: 1px solid var(--sh-hairline);
   border-bottom: 1px solid var(--sh-hairline);
+}
+
+/* Pushes the crossfade switch to the right edge. `margin-right: auto` rather
+   than `justify-content: space-between` on the row, because where the Cache
+   API is unavailable there is no keep button and the switch should still sit
+   right rather than sliding left on its own. */
+.keepSlot {
+  margin-right: auto;
 }
