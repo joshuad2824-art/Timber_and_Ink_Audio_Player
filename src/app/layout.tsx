@@ -122,8 +122,10 @@ export default function RootLayout({
     <html lang="en" className={fontVariables}>
       <body>
         <RegisterServiceWorker />
-        <StatusBarScrim />
         {children}
+        {/* Last, so paint order puts it over the page even before its z-index
+            is consulted. It is the one element that must never lose. */}
+        <StatusBarScrim />
       </body>
     </html>
   );

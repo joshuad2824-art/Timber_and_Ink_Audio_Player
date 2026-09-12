@@ -28,7 +28,14 @@
 .scrim {
   position: fixed;
   inset: 0 0 auto 0;
-  height: var(--sh-safe-top);
+  /* env() written out rather than reached through --sh-safe-top, and that is
+     the whole reason this strip did not appear. A custom property carrying an
+     env() resolves when it is substituted inside a calculation and can fail to
+     resolve when it is substituted as an entire property value — so `height`
+     was dropped, fell back to `auto`, and an empty div is nought pixels tall.
+     Every screen's padding kept working throughout, because every one of those
+     reads the same token inside a calc(). */
+  height: env(safe-area-inset-top, 0px);
   z-index: var(--sh-z-status);
   pointer-events: none;
   background-color: var(--sh-page);

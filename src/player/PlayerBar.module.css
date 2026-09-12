@@ -7,8 +7,11 @@
   background: var(--sh-chrome);
   border-top: 2px solid var(--sh-brass);
   box-shadow: var(--sh-shadow-player);
-  /* Without this the controls sit under the iOS home indicator. */
-  padding-bottom: var(--sh-safe-bottom);
+  /* Without this the controls sit under the iOS home indicator — which is
+     what they had gone back to doing. This read env() directly and was changed
+     to the token, and a token carrying an env() does not survive being
+     substituted as a whole property value in WebKit. Written out again. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .inner {

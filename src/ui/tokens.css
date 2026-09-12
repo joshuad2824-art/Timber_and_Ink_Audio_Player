@@ -96,6 +96,16 @@
 
   /* The notch, and the rounded corners either side of it in landscape.
 
+     USE THESE INSIDE calc() OR max(), NEVER AS A BARE VALUE. WebKit resolves
+     an env() that arrives through a custom property when the substitution
+     lands inside a calculation, and can fail to resolve one substituted as a
+     whole property value — the declaration is then dropped and the property
+     falls back to its initial value, silently. That is not theory: on a phone,
+     every rule here reading calc(var(--sh-safe-top) + ...) placed its content
+     correctly, and all three reading height: var(--sh-safe-top) or
+     padding-bottom: var(--sh-safe-bottom) came out as zero. A bare use wants
+     env(safe-area-inset-top, 0px) written out in the rule itself.
+
      `viewportFit: cover` is set deliberately — it is what lets the player bar
      reach the bottom edge of the screen instead of floating above a white
      strip — and the price of it is that the page now starts underneath the
