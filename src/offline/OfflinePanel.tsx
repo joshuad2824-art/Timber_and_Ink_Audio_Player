@@ -46,10 +46,16 @@ export function OfflinePanel({ count, total }: { count: number; total: number })
         an app after that, and every track you&rsquo;ve kept plays without a
         signal.
       </p>
+      {/* Both halves bend. The noun follows the total and the verb follows the
+          count, so a record of one and a device holding one both read as
+          English: "1 of 12 tracks is", "1 of 1 track is", "3 of 12 tracks are".
+          The old line said "1 of 12 tracks are", which reads as a template
+          rather than as something anybody wrote. */}
       <div className={styles.panelCount}>
         {count === 0
           ? "Nothing kept yet. Plenty of time."
-          : `${count} of ${total} tracks are on this device.`}
+          : `${count} of ${total} ${total === 1 ? "track" : "tracks"} ` +
+            `${count === 1 ? "is" : "are"} on this device.`}
       </div>
     </div>
   );

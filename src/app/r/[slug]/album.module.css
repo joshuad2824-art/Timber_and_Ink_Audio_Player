@@ -24,6 +24,24 @@
   color: var(--sh-ink-body);
 }
 
+/* Holds the button and whatever it has to report, right-aligned under it, so
+   a failure appears without moving the header's other half. */
+.lockBackSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.lockBackNudge {
+  max-width: 26ch;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-wider);
+  line-height: 1.5;
+  text-align: right;
+  color: var(--sh-warning);
+}
+
 .cover {
   margin: 22px 0 30px;
 }

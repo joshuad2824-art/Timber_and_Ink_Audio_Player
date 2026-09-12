@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { PaperCard } from "@/ui/devices";
 import { PHRASE_EMPTY } from "@/data/phrase";
@@ -22,8 +22,17 @@ export function GateForm({ slug }: { slug: string }) {
   const [nudge, setNudge] = useState("");
   const [busy, setBusy] = useState(false);
 
+  /* The right phrase is answered by a re-render of the page as the album, and
+     `router.refresh()` is not something you can await — so without this the
+     button greyed for the length of the request and came back looking exactly
+     as it had before, seconds before the screen changed. On a slow connection
+     that reads as a press that did not take, and the next thing a listener
+     does is press it again. `useTransition` is the only thing that knows the
+     refresh is still in flight. */
+  const [opening, startOpening] = useTransition();
+
   async function submit() {
-    if (busy) return;
+    if (busy || opening) return;
 
     // The empty case is answered here rather than spent on a round trip; the
     // wording matches what the server would have said.
@@ -43,7 +52,7 @@ export function GateForm({ slug }: { slug: string }) {
       });
 
       if (res.ok) {
-        router.refresh();
+        startOpening(() => router.refresh());
         return;
       }
 
@@ -80,6 +89,7 @@ export function GateForm({ slug }: { slug: string }) {
         aria-invalid={nudge ? true : undefined}
         aria-describedby="phrase-nudge"
         onChange={(e) => setPhrase(e.target.value)}
+        disabled={opening}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -94,13 +104,16 @@ export function GateForm({ slug }: { slug: string }) {
         {nudge}
       </div>
 
+      {/* The label carries the pending state rather than a spinner: there are
+          no spinners anywhere in this design, and the one thing worth saying
+          while the album loads is that the phrase was right. */}
       <button
         type="button"
         className={gate.button}
         onClick={() => void submit()}
-        disabled={busy}
+        disabled={busy || opening}
       >
-        Come in
+        {opening ? "Opening it" : "Come in"}
       </button>
     </PaperCard>
   );
