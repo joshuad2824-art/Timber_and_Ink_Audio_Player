@@ -34,7 +34,8 @@
   margin: 0 auto;
   /* Added rather than maxed, unlike the screens below: this one had no top
      padding of its own to weigh the inset against — the back link sat at the
-     very top of the page — so the inset plus a little air is the whole value. */
+     very top of the page — so the strip plus a little air is the whole value.
+     inset plus a little air is the whole value. */
   padding: calc(var(--sh-safe-top) + 10px) var(--sh-gutter-right)
     calc(var(--sh-player-clearance) + var(--sh-safe-bottom)) var(--sh-gutter-left);
 }

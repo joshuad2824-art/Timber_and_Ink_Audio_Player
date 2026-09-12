@@ -22,7 +22,9 @@
    pooling at the bottom, and a cold sage fall from the top right. */
 .lamplight {
   background:
-    radial-gradient(880px 1040px at 6% 220px, rgba(198, 134, 47, 0.115), rgba(0, 0, 0, 0) 68%),
+    /* Shared with the status-bar strip, which has to land on the same colour
+       this puts at the top of the page. */
+    var(--sh-lamplight-main),
     radial-gradient(70% 44% at 18% 88%, rgba(198, 134, 47, 0.1), rgba(0, 0, 0, 0) 72%),
     radial-gradient(46% 30% at 84% 4%, rgba(120, 150, 140, 0.055), rgba(0, 0, 0, 0) 74%);
 }

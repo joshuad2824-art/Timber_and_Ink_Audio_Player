@@ -1,0 +1,36 @@
+/* The floor under the status bar.
+
+   `black-translucent` hands the app the full height of the screen, which is
+   what puts the page's own background behind the clock and the battery — and
+   is also what lets the page scroll up into them. A record title sliding under
+   the time is unreadable at exactly the moment somebody is reading it.
+
+   So the strip the status bar occupies gets an opaque floor, fixed to the
+   viewport and above everything else. Content still scrolls under it; it
+   simply cannot be seen doing so.
+
+   Opaque for its whole height, with a clean bottom edge, and both halves of
+   that were learned the hard way. A version of this faded out over its last
+   quarter so that no edge could be noticed — and text passing underneath
+   ghosted straight through the fade, which is the very thing the strip exists
+   to prevent. A status bar cuts content off; it does not half-show it.
+
+   The colour is not flat page green, which was the first attempt and was
+   visibly wrong: the lamplight warms the top of every page by around fourteen
+   points of red, so a flat strip read as a cold band laid across the top of the
+   design. It carries the same wash the page does, from the same token, and the
+   wash is positioned in absolute pixels from the top of its box — so the strip
+   draws the identical slice the page would have drawn there, and the two meet
+   without a seam.
+
+   The height is the inset itself: a screen with no notch gets an element of no
+   height at all rather than a band across the top of a desktop browser. */
+.scrim {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--sh-safe-top);
+  z-index: var(--sh-z-status);
+  pointer-events: none;
+  background-color: var(--sh-page);
+  background-image: var(--sh-lamplight-main);
+}
