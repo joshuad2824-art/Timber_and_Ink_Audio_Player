@@ -92,8 +92,26 @@
   transition: color var(--sh-motion);
 }
 
-.control:hover:not(:disabled) {
-  color: var(--sh-ink-headline);
+/* Hover, but only where hovering is a real thing and only on a control that is
+   not already saying something.
+
+   Both halves of that are load-bearing. A hover rule carries more specificity
+   than a single engaged class, so `.control:hover` quietly overruled the gold —
+   and the pointer is still sitting on the button at the moment you click it, so
+   the gold appeared only once you moved the mouse away. A phone has the same
+   problem for a different reason: a tap leaves :hover applied until you touch
+   something else, so the toggle came back cream the instant it was pressed.
+
+   `(hover: hover)` keeps the rule off touch entirely, and an engaged control
+   hovers to a brighter gold rather than out of gold. */
+@media (hover: hover) {
+  .control:not(.engaged):hover:not(:disabled) {
+    color: var(--sh-ink-headline);
+  }
+
+  .control.engaged:hover:not(:disabled) {
+    color: var(--sh-brass-hover);
+  }
 }
 
 .control:disabled {
