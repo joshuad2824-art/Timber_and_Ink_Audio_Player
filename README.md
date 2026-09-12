@@ -70,7 +70,8 @@ Milestone 5 of six, complete apart from the download links. See
       per-record cookie, and the album screen behind it.
 - [x] **3 — The player.** FLAC streaming behind the record cookie with byte
       ranges, two audio elements, drag-seek, shuffle, the three repeat modes,
-      volume with persistence, linear crossfade, Media Session.
+      volume with persistence, spaced transitions or linear crossfade, Media
+      Session.
 - [x] **4 — The desk.** Auth, record CRUD, reorder, publish/listed flags,
       phrase editing, the record editor, site text with autosave, the admin bar,
       and WAV upload with in-browser FLAC/MP3 encoding.
@@ -138,8 +139,21 @@ uploading, reassembling, storing and decoding.
   byte range when you drag the scrub bar; answering 200-with-everything would
   make every seek refetch the whole track.
 - **Two audio elements**, because one cannot overlap the end of a track with the
-  start of the next. They swap roles on each advance; the idle one is where the
-  next track preloads and where a crossfade ramps up.
+  start of the next. The idle one is where a crossfade ramps up, and the two
+  swap roles when it completes. A spaced transition has no overlap to arrange,
+  so it stays on the element the listener started — iOS only lets an element
+  play unprompted once that element has had a tap — and spends the silence
+  buffering what comes next.
+- **Nothing starts or stops at full volume.** With crossfade off, a track's tail
+  ramps down inside its own last 1.6 seconds, two and a half seconds of silence
+  follow, and the next track ramps up over 1.2: a record puts a gap between
+  songs and so does this. With crossfade on they overlap instead, on the
+  4-second linear ramp. A tap on play or pause gets a third of a second either
+  way, which is the difference between a transport and a switch. The last track
+  of a record is left alone — an ending that was mastered to end is not one to
+  fade. Ramps run on their own 50ms timer against the wall clock, because a
+  quarter-second tick is audible as steps and a throttled tab has to arrive
+  anyway.
 
 ## Offline
 
