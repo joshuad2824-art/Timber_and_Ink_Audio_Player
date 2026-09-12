@@ -15,6 +15,15 @@
  * bug dressed as a performance feature.
  */
 
+/* This deploy's identifier, put there by the page that registered us.
+
+   The version had been a literal `v1` in the two names below, which made the
+   comment under them false: `sw.js` is a static file whose bytes never change,
+   so the browser never saw a new worker, `install` never ran again, and the
+   names it deletes by were never anything but v1. The offline page stayed
+   frozen at whichever build first installed it. */
+const VERSION = new URL(self.location.href).searchParams.get("v") || "1";
+
 /* Kept audio. Deliberately unversioned: bumping the worker must never throw
    away tracks somebody chose to keep. It is emptied only when they say so. */
 const AUDIO = "shadow-harbor-audio";
@@ -22,8 +31,8 @@ const AUDIO = "shadow-harbor-audio";
 /* The shell and the last-seen pages. Versioned, and cleared on activate — a
    new deploy has new markup, and a kept album is no use if it opens in last
    week's page. */
-const SHELL = "shadow-harbor-shell-v1";
-const PAGES = "shadow-harbor-pages-v1";
+const SHELL = `shadow-harbor-shell-${VERSION}`;
+const PAGES = `shadow-harbor-pages-${VERSION}`;
 
 /* Cover art. Unversioned like the audio, and for a softer version of the same
    reason: a sleeve is a couple of hundred kilobytes and part of the record, so
@@ -49,6 +58,17 @@ const COVER_PATH = /^\/api\/records\/[^/]+\/cover$/;
 /** Content-hashed by the build, so it can be trusted forever. */
 const IMMUTABLE = /^\/(_next\/static|flac)\//;
 
+/* The pieces of the page that are not content-hashed and not in the markup.
+
+   The two desk textures are referenced from inside a stylesheet, so the
+   install scan — which reads src and href out of the offline page's own HTML —
+   never saw them, and nothing else here matched their path. Offline, every
+   screen lost its wear and its grain and came back as flat gradients: still
+   legible, but plainly not the same site. They are versioned with the shell
+   rather than trusted forever, because unlike a hashed chunk their URL stays
+   the same when their contents change. */
+const DRESSING = /^\/(textures|icons)\//;
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
@@ -56,10 +76,30 @@ self.addEventListener("install", (event) => {
       // Best effort throughout. A failed pre-cache must not stop the worker
       // installing, or one missing file means no offline at all.
       await precache(cache);
-      await self.skipWaiting();
     })(),
   );
 });
+
+/* No `skipWaiting`, deliberately, and it used to be here.
+
+   Now that a deploy really does produce a new worker, skipping the wait would
+   mean a new worker activating under a page that is already open — and
+   `activate` deletes the previous version's shell, which is where that page's
+   own chunks are. It would pull the floor out from under a listener mid-record
+   to install a build they have not asked for yet.
+
+   The first install has nothing to wait for — there is no old worker — so it
+   activates at once and `clients.claim()` below still takes control of the
+   very first visit. Every later one lands on the next. */
+
+/** The dressing: not in the markup, so it has to be named. */
+const DRESSING_FILES = [
+  "/textures/desk-wear.png",
+  "/textures/desk-grain.png",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+];
 
 /**
  * Pre-cache the offline page — and the files it needs to be a page.
@@ -88,6 +128,9 @@ async function precache(cache) {
       [...html.matchAll(/(?:src|href)="(\/_next\/static\/[^"]+)"/g)].map((m) => m[1]),
     );
     assets.add("/manifest.webmanifest");
+    // Named rather than scanned: these are reached from inside a stylesheet,
+    // where the scan above cannot see them.
+    for (const file of DRESSING_FILES) assets.add(file);
 
     await Promise.all(
       [...assets].map(async (url) => {
@@ -227,6 +270,30 @@ self.addEventListener("fetch", (event) => {
 
   // Everything else under /api is live or it is wrong.
   if (url.pathname.startsWith("/api/")) return;
+
+  /* The textures and the icons. Cache first, because they are the backdrop and
+     waiting on the network to draw it is worse than drawing last deploy's copy;
+     the version in the cache name is what eventually retires that copy. */
+  if (DRESSING.test(url.pathname)) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(SHELL);
+        const hit = await cache.match(request, { ignoreVary: true });
+        if (hit) return hit;
+
+        try {
+          const fresh = await fetch(request);
+          if (fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
+          return fresh;
+        } catch {
+          /* No signal and never seen. A missing texture layer is a flatter
+             page, not a broken one, so this fails quietly rather than loudly. */
+          return new Response(null, { status: 504 });
+        }
+      })(),
+    );
+    return;
+  }
 
   if (IMMUTABLE.test(url.pathname)) {
     event.respondWith(
