@@ -86,63 +86,61 @@ export function Claim() {
           rotate={0.8}
           tape={{ placement: "topRight", tone: "olive" }}
         >
-          <label className={gate.label} htmlFor="token">
-            Setup token
-          </label>
-          <input
-            id="token"
-            className={gate.input}
-            type="password"
-            value={token}
-            autoComplete="off"
-            onChange={(e) => setToken(e.target.value)}
-          />
-
-          <div style={{ height: 16 }} />
-
-          <label className={gate.label} htmlFor="new-key">
-            A new key
-          </label>
-          <input
-            id="new-key"
-            className={gate.input}
-            type="password"
-            value={password}
-            autoComplete="new-password"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <div style={{ height: 16 }} />
-
-          <label className={gate.label} htmlFor="confirm-key">
-            The same key again
-          </label>
-          <input
-            id="confirm-key"
-            className={gate.input}
-            type="password"
-            value={confirm}
-            autoComplete="new-password"
-            onChange={(e) => setConfirm(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void submit();
-              }
+          {/* A real form, so a password manager offers to store the key it is
+              about to become impossible to recover — only its hash is kept. */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit();
             }}
-          />
-
-          <div className={gate.errorSlot} role="status" aria-live="polite">
-            {nudge}
-          </div>
-          <button
-            type="button"
-            className={gate.button}
-            disabled={busy}
-            onClick={() => void submit()}
           >
-            Claim it
-          </button>
+            <label className={gate.label} htmlFor="token">
+              Setup token
+            </label>
+            <input
+              id="token"
+              className={gate.input}
+              type="password"
+              value={token}
+              autoComplete="off"
+              onChange={(e) => setToken(e.target.value)}
+            />
+
+            <div style={{ height: 16 }} />
+
+            <label className={gate.label} htmlFor="new-key">
+              A new key
+            </label>
+            <input
+              id="new-key"
+              className={gate.input}
+              type="password"
+              value={password}
+              autoComplete="new-password"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            <div style={{ height: 16 }} />
+
+            <label className={gate.label} htmlFor="confirm-key">
+              The same key again
+            </label>
+            <input
+              id="confirm-key"
+              className={gate.input}
+              type="password"
+              value={confirm}
+              autoComplete="new-password"
+              onChange={(e) => setConfirm(e.target.value)}
+            />
+
+            <div id="claim-nudge" className={gate.errorSlot} role="alert">
+              {nudge}
+            </div>
+            <button type="submit" className={gate.button} disabled={busy}>
+              Claim it
+            </button>
+          </form>
         </PaperCard>
       </div>
     </section>

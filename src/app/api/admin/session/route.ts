@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: KEY_WRONG }, { status: 401 });
   }
 
-  await clearFailures(ip, "admin");
+  await clearFailures(ip, "__desk__", "admin");
 
   const expiresAt = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
   const response = NextResponse.json({ ok: true });

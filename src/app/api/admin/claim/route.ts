@@ -88,7 +88,7 @@ export async function POST(request: Request) {
   }
 
   await setAdminPassword(password);
-  await clearFailures(ip, "admin");
+  await clearFailures(ip, "__claim__", "admin");
 
   const version = await credentialVersion();
   if (version === null) {

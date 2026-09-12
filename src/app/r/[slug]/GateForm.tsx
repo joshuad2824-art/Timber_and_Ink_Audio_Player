@@ -71,50 +71,52 @@ export function GateForm({ slug }: { slug: string }) {
 
   return (
     <PaperCard className={gate.card} tape={{ placement: "topLeft", tone: "cream" }}>
-      <label className={gate.label} htmlFor="phrase">
-        The phrase
-      </label>
-
-      <input
-        id="phrase"
-        className={gate.input}
-        type="text"
-        value={phrase}
-        placeholder="the phrase"
-        autoComplete="off"
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck={false}
-        aria-label="Access phrase"
-        aria-invalid={nudge ? true : undefined}
-        aria-describedby="phrase-nudge"
-        onChange={(e) => setPhrase(e.target.value)}
-        disabled={opening}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            void submit();
-          }
+      {/* A real form, so a phone's keyboard offers "go" on the return key
+          rather than a plain newline the input has to catch by hand. */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
         }}
-      />
-
-      {/* Keeps its height when empty, so the card never reflows under the
-          reader's hands as an error appears or clears. */}
-      <div id="phrase-nudge" className={gate.errorSlot} role="status" aria-live="polite">
-        {nudge}
-      </div>
-
-      {/* The label carries the pending state rather than a spinner: there are
-          no spinners anywhere in this design, and the one thing worth saying
-          while the album loads is that the phrase was right. */}
-      <button
-        type="button"
-        className={gate.button}
-        onClick={() => void submit()}
-        disabled={busy || opening}
       >
-        {opening ? "Opening it" : "Come in"}
-      </button>
+        <label className={gate.label} htmlFor="phrase">
+          The phrase
+        </label>
+
+        <input
+          id="phrase"
+          className={gate.input}
+          type="text"
+          value={phrase}
+          placeholder="the phrase"
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-label="Access phrase"
+          aria-invalid={nudge ? true : undefined}
+          aria-describedby="phrase-nudge"
+          onChange={(e) => setPhrase(e.target.value)}
+          disabled={opening}
+        />
+
+        {/* Keeps its height when empty, so the card never reflows under the
+            reader's hands as an error appears or clears. */}
+        <div id="phrase-nudge" className={gate.errorSlot} role="alert">
+          {nudge}
+        </div>
+
+        {/* The label carries the pending state rather than a spinner: there
+            are no spinners anywhere in this design, and the one thing worth
+            saying while the album loads is that the phrase was right. */}
+        <button
+          type="submit"
+          className={gate.button}
+          disabled={busy || opening}
+        >
+          {opening ? "Opening it" : "Come in"}
+        </button>
+      </form>
     </PaperCard>
   );
 }

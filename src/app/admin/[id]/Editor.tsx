@@ -244,13 +244,19 @@ function Field({
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
 
+  /* An id, not a label with a space in it. "Record title" made
+     `id="f-Record title"`, which is not a valid id — browsers mostly still
+     match a `for` against it, but "mostly" is the wrong guarantee for the
+     thing that tells a screen reader what a field is called. */
+  const id = `f-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
   return (
     <div className={desk.field}>
-      <label className={desk.fieldLabel} htmlFor={`f-${label}`}>
+      <label className={desk.fieldLabel} htmlFor={id}>
         {label}
       </label>
       <input
-        id={`f-${label}`}
+        id={id}
         className={desk.input}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}

@@ -80,36 +80,35 @@ export function SignIn() {
           rotate={0.8}
           tape={{ placement: "topRight", tone: "olive" }}
         >
-          <label className={gate.label} htmlFor="key">
-            The key
-          </label>
-          <input
-            id="key"
-            className={gate.input}
-            type="password"
-            value={password}
-            autoComplete="current-password"
-            aria-label="The key"
-            aria-describedby="key-nudge"
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void submit();
-              }
+          {/* A real form, so a password manager recognises this as a sign-in
+              and offers to fill it — and so the return key submits without an
+              input having to listen for it. */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit();
             }}
-          />
-          <div id="key-nudge" className={gate.errorSlot} role="status" aria-live="polite">
-            {nudge}
-          </div>
-          <button
-            type="button"
-            className={gate.button}
-            disabled={busy}
-            onClick={() => void submit()}
           >
-            Sign in
-          </button>
+            <label className={gate.label} htmlFor="key">
+              The key
+            </label>
+            <input
+              id="key"
+              className={gate.input}
+              type="password"
+              value={password}
+              autoComplete="current-password"
+              aria-label="The key"
+              aria-describedby="key-nudge"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <div id="key-nudge" className={gate.errorSlot} role="alert">
+              {nudge}
+            </div>
+            <button type="submit" className={gate.button} disabled={busy}>
+              Sign in
+            </button>
+          </form>
         </PaperCard>
       </div>
     </section>
