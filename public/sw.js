@@ -45,6 +45,55 @@ const KEEP = new Set([AUDIO, SHELL, PAGES, COVERS]);
 /** The offline stand-in, for a page nobody has visited yet. */
 const OFFLINE = "/offline";
 
+/**
+ * Which track files this device is actually holding, as absolute URLs.
+ *
+ * A set in memory rather than a cache lookup, because the fetch handler has to
+ * decide whether it is answering a request before it can await anything —
+ * `respondWith` is called synchronously or not at all — so the answer has to be
+ * there already.
+ *
+ * The reason it exists: on iOS, a media element in a home-screen app will not
+ * play a ranged response that came back through a service worker. Every audio
+ * request used to go through `respondWith`, including the ones this worker had
+ * nothing cached for and simply proxied to the network, and in a standalone app
+ * that is the difference between a record playing and a record sitting at
+ * "Buffering" for good. The same build plays in Safari, where the media stack
+ * is less particular, which is how it was found.
+ *
+ * So the rule is now: take over a track this device is holding, and let every
+ * other one reach the network untouched, exactly as if nothing were installed.
+ */
+let keptUrls = null;
+
+async function refreshKept() {
+  try {
+    const cache = await caches.open(AUDIO);
+    const keys = await cache.keys();
+    keptUrls = new Set(keys.map((request) => request.url));
+  } catch {
+    // Never leave it null on a failure — null means "not read yet", which
+    // passes requests through, and that is the right answer here too.
+    keptUrls = keptUrls ?? new Set();
+  }
+}
+
+/* Read at worker start, not only on activate. A service worker is stopped and
+   restarted freely between events, and the set has to be back when it is. */
+void refreshKept();
+
+/**
+ * The page keeps and drops tracks itself — the worker is only ever the reader —
+ * so it has to be told when the set moved underneath it. Without this a track
+ * kept during this visit would go unrecognised until the worker next restarted,
+ * and would stream instead of playing off the device.
+ */
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "kept-changed") {
+    event.waitUntil(refreshKept());
+  }
+});
+
 /* One track's audio. The trailing query carries the format, which is part of
    the cache key — a FLAC and an MP3 of the same track are different files and
    a device may hold either. */
@@ -153,6 +202,7 @@ self.addEventListener("activate", (event) => {
     (async () => {
       const names = await caches.keys();
       await Promise.all(names.filter((n) => !KEEP.has(n)).map((n) => caches.delete(n)));
+      await refreshKept();
       await self.clients.claim();
     })(),
   );
@@ -250,14 +300,26 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (AUDIO_PATH.test(url.pathname)) {
+    /* Untouched unless this device is holding this exact file.
+
+       Returning without calling `respondWith` is the whole point: the request
+       goes to the network as though no worker were installed, which is what
+       iOS needs to play it in a home-screen app. A track that is not kept was
+       only ever being proxied here anyway — nothing was read from the cache
+       and nothing was written to it — so the worker was adding a failure mode
+       and nothing else.
+
+       A worker that has only just started may not have read the cache yet.
+       Passing that one request through is right online, and offline the media
+       element asks again a moment later, by which time the set is there. */
+    if (!keptUrls || !keptUrls.has(request.url)) return;
+
     event.respondWith(
       (async () => {
         const kept = await keptAudio(request);
-        if (kept) return kept;
-        /* Not kept, so it streams. Nothing is written to the cache here: a
-           track lands on the device because somebody chose to keep it, never
-           as a side effect of listening once. */
-        return fetch(request);
+        /* Held a moment ago and gone now — evicted between the read and the
+           request. The network still has it. */
+        return kept ?? fetch(request);
       })(),
     );
     return;

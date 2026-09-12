@@ -45,6 +45,27 @@ export function offlineSupported(): boolean {
   );
 }
 
+/**
+ * Tell the worker the kept set moved.
+ *
+ * The page writes to the cache and the worker reads from it, which is the
+ * right split — a worker is not controlling the page on the very first load,
+ * so routing a keep through it would leave the bookmark inert until the next
+ * visit. The cost of that split is this message: the worker holds the kept
+ * URLs in memory so it can decide, synchronously, whether a track is its to
+ * answer, and it cannot see a write it did not make.
+ *
+ * Best effort by design. If there is no worker yet, nothing is listening and
+ * nothing is lost — it reads the cache itself the next time it starts.
+ */
+function announceKeptChange(): void {
+  try {
+    navigator.serviceWorker?.controller?.postMessage({ type: "kept-changed" });
+  } catch {
+    /* no worker, no controller, or messaging refused */
+  }
+}
+
 /** What a track is kept as, keyed by track id. Absent means not kept. */
 export type KeptMap = Record<string, ListenFormat>;
 
@@ -194,6 +215,7 @@ export async function keepTrack(
       }
 
       await cache.put(new Request(url), counted(response, sizes[trackId]?.[format], onProgress));
+      announceKeptChange();
       return { ok: true, format, downgraded: format !== preferred };
     } catch (err) {
       const quota =
@@ -267,6 +289,7 @@ export async function dropTrack(slug: string, trackId: string): Promise<void> {
       cache.delete(new Request(audioUrl(slug, trackId, format))),
     ),
   );
+  announceKeptChange();
 }
 
 /** A size for a line of copy. Megabytes, because that is the unit of a track. */
@@ -331,4 +354,6 @@ export async function forgetRecord(slug: string): Promise<void> {
     /* Nothing here is load-bearing for the lock itself, which is the cookie.
        A browser that refuses to open a cache has nothing cached to clear. */
   }
+
+  announceKeptChange();
 }
