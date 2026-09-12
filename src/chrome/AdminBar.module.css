@@ -1,5 +1,14 @@
+/* Sits below the status bar rather than under it.
+
+   This bar is the first thing in the page, above the padded section that
+   follows it, so it was the one piece of chrome with nothing between it and
+   the top of the screen — and once the view ran the full height of the
+   display, that put it behind the clock. The margin is the inset itself, so
+   the strip above it stays the page's own green and matches the scrim laid
+   over it. */
 .bar {
   position: relative;
+  margin-top: var(--sh-safe-top);
   z-index: var(--sh-z-admin-bar);
   background: var(--sh-chrome);
   border-bottom: 2px solid var(--sh-brass);

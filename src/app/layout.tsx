@@ -10,6 +10,7 @@ import {
 } from "next/font/google";
 
 import { RegisterServiceWorker } from "@/offline/Register";
+import { StatusBarScrim } from "@/chrome/StatusBarScrim";
 import "@/ui/tokens.css";
 
 /* The design system's fonts.css pulls seven families from Google over an
@@ -121,6 +122,7 @@ export default function RootLayout({
     <html lang="en" className={fontVariables}>
       <body>
         <RegisterServiceWorker />
+        <StatusBarScrim />
         {children}
       </body>
     </html>

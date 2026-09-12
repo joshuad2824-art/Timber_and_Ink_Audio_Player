@@ -108,6 +108,22 @@
   --sh-safe-right: env(safe-area-inset-right, 0px);
   --sh-safe-bottom: env(safe-area-inset-bottom, 0px);
 
+  /* The lamplight's main wash, named on its own because two surfaces draw it:
+     the backdrop, and the opaque strip laid over the top of the backdrop where
+     the status bar sits.
+
+     It is the one of the three radials positioned in absolute pixels from the
+     top of its box rather than as a percentage of it, and that is exactly what
+     makes it shareable — a 59px strip and a 1400px page draw the same slice of
+     it, so the strip lands on the colour the page would have had there. The
+     other two are percentage-positioned and would render as blobs inside a
+     strip, so they stay on the backdrop where their box is the whole page. */
+  --sh-lamplight-main: radial-gradient(
+    880px 1040px at 6% 220px,
+    rgba(198, 134, 47, 0.115),
+    rgba(0, 0, 0, 0) 68%
+  );
+
   /* The side gutter with the landscape insets already in it. Screens use this
      rather than --sh-gutter so there is one place to get it right. */
   --sh-gutter-left: calc(var(--sh-gutter) + var(--sh-safe-left));
@@ -132,6 +148,9 @@
   --sh-z-content: 3;
   --sh-z-admin-bar: 12;
   --sh-z-player: 20;
+  /* Above everything, because it is the one thing that must never be scrolled
+     through: the strip the status bar sits in. */
+  --sh-z-status: 30;
 
   /* Motion: transform and shadow only. Nothing else animates. */
   --sh-motion: 240ms var(--ease-out);
