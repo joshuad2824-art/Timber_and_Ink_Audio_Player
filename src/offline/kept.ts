@@ -15,8 +15,14 @@ import type { ListenFormat, TrackAssetSizes } from "@/data/types";
 /* Shared with public/sw.js, which cannot import from here — it is served as a
    plain script from the origin root. If either name changes, change it there. */
 const AUDIO_CACHE = "shadow-harbor-audio";
-const PAGES_CACHE = "shadow-harbor-pages-v1";
 const COVER_CACHE = "shadow-harbor-covers";
+
+/* A prefix, not a name. The worker's page cache carries the build id, so there
+   is a new one every deploy and there can be more than one on the device at
+   once — an old version survives until the worker that replaces it activates.
+   Matching the name exactly meant "Lock it back" cleared whichever cache was
+   named last release and left the record's page sitting in the current one. */
+const PAGES_PREFIX = "shadow-harbor-pages-";
 
 /** The one URL shape for a track's bytes. Format is part of the cache key. */
 export function audioUrl(slug: string, trackId: string, format: ListenFormat): string {
@@ -147,6 +153,8 @@ export async function keepTrack(
   trackId: string,
   sizes: TrackAssetSizes,
   preferred: ListenFormat,
+  /** Called with 0..1 as the bytes arrive, where the browser will say how many. */
+  onProgress?: (ratio: number) => void,
 ): Promise<KeepResult> {
   if (!offlineSupported()) {
     return { ok: false, error: "This browser won't keep files for later." };
@@ -185,7 +193,7 @@ export async function keepTrack(
         continue;
       }
 
-      await cache.put(new Request(url), response);
+      await cache.put(new Request(url), counted(response, sizes[trackId]?.[format], onProgress));
       return { ok: true, format, downgraded: format !== preferred };
     } catch (err) {
       const quota =
@@ -198,6 +206,49 @@ export async function keepTrack(
   }
 
   return { ok: false, error: lastError };
+}
+
+/**
+ * The same response, counting itself on the way past.
+ *
+ * A lossless track is tens of megabytes and the only sign anything was
+ * happening was a disabled button — on a phone, over cellular, for a minute or
+ * more, which is long enough to assume the tap did not register and try again.
+ *
+ * The body is piped rather than buffered: reading it into memory to measure it
+ * would mean holding a whole album's worth of track in RAM on a device that is
+ * being asked to store it precisely because it is short of room. Anything
+ * missing — no body, no length to measure against, a browser without
+ * TransformStream — hands back the original response untouched, because a
+ * bookmark that works without a meter beats a meter that costs the bookmark.
+ */
+function counted(
+  response: Response,
+  expected: number | undefined,
+  onProgress?: (ratio: number) => void,
+): Response {
+  const total = Number(response.headers.get("content-length")) || expected || 0;
+  if (!onProgress || !response.body || total <= 0 || typeof TransformStream === "undefined") {
+    return response;
+  }
+
+  try {
+    let read = 0;
+    const meter = new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        read += chunk.byteLength;
+        onProgress(Math.min(1, read / total));
+        controller.enqueue(chunk);
+      },
+    });
+    return new Response(response.body.pipeThrough(meter), {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  } catch {
+    return response;
+  }
 }
 
 /**
@@ -250,14 +301,22 @@ export async function forgetRecord(slug: string): Promise<void> {
         .map((request) => audio.delete(request)),
     );
 
-    /* The album page as it was last served. Matched by path rather than by a
-       constructed Request, because what was stored is the navigation request
-       the browser made, headers and all. */
-    const pages = await caches.open(PAGES_CACHE);
+    /* The album page as it was last served, out of every page cache on the
+       device. Matched by path rather than by a constructed Request, because
+       what was stored is the navigation request the browser made, headers and
+       all. */
+    const pageCaches = (await caches.keys()).filter((name) =>
+      name.startsWith(PAGES_PREFIX),
+    );
     await Promise.all(
-      (await pages.keys())
-        .filter((request) => new URL(request.url).pathname === `/r/${slug}`)
-        .map((request) => pages.delete(request)),
+      pageCaches.map(async (name) => {
+        const pages = await caches.open(name);
+        await Promise.all(
+          (await pages.keys())
+            .filter((request) => new URL(request.url).pathname === `/r/${slug}`)
+            .map((request) => pages.delete(request)),
+        );
+      }),
     );
 
     // And the sleeve. The worker keeps that one as a side effect of looking at

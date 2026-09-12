@@ -162,8 +162,17 @@ export function AlbumPlayer({
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className={album.trackTitle}>{track.title}</span>
+                {/* The running time, except while this track is coming down
+                    to the device, when it is how far down it has come. A
+                    lossless track is tens of megabytes and the bookmark going
+                    grey was the whole of the feedback; the count belongs where
+                    the eye already is rather than in a new device of its own. */}
                 <span className={`${type_.meta} ${album.trackTime}`}>
-                  {isPlayable ? formatDuration(track.seconds) : "—"}
+                  {offline.busy === track.id && offline.progress !== null
+                    ? `${Math.round(offline.progress * 100)}%`
+                    : isPlayable
+                      ? formatDuration(track.seconds)
+                      : "—"}
                 </span>
               </div>
 

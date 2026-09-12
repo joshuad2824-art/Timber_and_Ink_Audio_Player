@@ -31,12 +31,34 @@ export function Editor({ record: initial }: { record: FullRecord }) {
     router.refresh();
   }
 
+  /**
+   * Save a change, and say so if it did not take.
+   *
+   * The answer used to be thrown away. A rejected write — a year that would
+   * not parse, a slug already taken, the database saying no — came back, was
+   * ignored, and `reload()` put the old value back in the field. From the
+   * owner's side a rename simply undid itself, silently, which is the kind of
+   * thing you blame on your own typing for a while before you blame the site.
+   */
   async function put(body: unknown) {
-    await fetch(`/api/admin/records/${record.id}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch(`/api/admin/records/${record.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const answer = await res.json().catch(() => ({}));
+        say(
+          typeof answer?.error === "string"
+            ? answer.error
+            : "That didn't save. It's still here — try again.",
+        );
+      }
+    } catch {
+      say("I couldn't reach the server. Nothing saved yet.");
+      return;
+    }
     await reload();
   }
 
@@ -149,6 +171,7 @@ export function Editor({ record: initial }: { record: FullRecord }) {
             first={i === 0}
             last={i === record.tracks.length - 1}
             onChanged={reload}
+            say={say}
           />
         ))}
       </div>
@@ -295,6 +318,7 @@ function TrackRow({
   first,
   last,
   onChanged,
+  say,
 }: {
   recordId: string;
   track: AdminTrack;
@@ -302,6 +326,7 @@ function TrackRow({
   first: boolean;
   last: boolean;
   onChanged: () => void;
+  say: (m: string) => void;
 }) {
   const [title, setTitle] = useState(track.title);
   const [length, setLength] = useState(formatDuration(track.seconds));
@@ -314,11 +339,17 @@ function TrackRow({
   }, [track.title, track.seconds]);
 
   async function put(body: unknown) {
-    await fetch(`/api/admin/records/${recordId}/tracks/${track.id}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch(`/api/admin/records/${recordId}/tracks/${track.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) say("That didn't save. It's still here — try again.");
+    } catch {
+      say("I couldn't reach the server. Nothing saved yet.");
+      return;
+    }
     onChanged();
   }
 
@@ -366,7 +397,9 @@ function TrackRow({
         aria-label={`Length of track ${index + 1}`}
         /* Accepts 3:52 or 232 — whichever the owner has to hand. */
         onChange={(e) => setLength(e.target.value)}
-        onBlur={() => put({ length })}
+        /* Only when it actually changed. Tabbing through the row used to write
+           and reload the whole record once per field passed over. */
+        onBlur={() => length !== formatDuration(track.seconds) && put({ length })}
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
         }}

@@ -169,12 +169,27 @@ function RecordCard({
       ? "var(--sh-brass-bright)"
       : "var(--sh-ink-muted)";
 
+  /* The answer is read, not discarded — the same reason as in the editor: a
+     rejected write reached the card as a value that quietly put itself back. */
   async function put(body: unknown) {
-    await fetch(`/api/admin/records/${record.id}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch(`/api/admin/records/${record.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const answer = await res.json().catch(() => ({}));
+        say(
+          typeof answer?.error === "string"
+            ? answer.error
+            : "That didn't save. It's still here — try again.",
+        );
+      }
+    } catch {
+      say("I couldn't reach the server. Nothing saved yet.");
+      return;
+    }
     onChanged();
   }
 

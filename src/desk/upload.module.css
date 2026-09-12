@@ -1,7 +1,20 @@
+/* Also the drop target. The dashed rule only appears with a file over it —
+   an outline drawn all the time would be a second thing asking to be looked
+   at, on a screen whose one lit element is elsewhere. */
 .wrap {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 12px;
+  margin: -12px;
+  border: 1px dashed transparent;
+  border-radius: var(--radius-sm);
+  transition: border-color var(--sh-motion), background-color var(--sh-motion);
+}
+
+.wrapOver {
+  border-color: var(--sh-brass);
+  background: var(--sh-wash-hover);
 }
 
 /* Hidden, but still the real control: the label is its button. */
