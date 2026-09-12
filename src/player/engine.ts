@@ -852,10 +852,13 @@ export class PlayerEngine {
   /**
    * The next index, or -1 if the record stops here.
    *
-   * Pure, and it has to stay pure: `tick` asks it on every quarter-second of a
-   * track's last seconds, just to find out whether there is anything to fade
-   * towards. Anything with a side effect here — drawing a new random index,
-   * reshuffling on the wrap — would fire dozens of times per seam.
+   * Asked repeatedly and speculatively: `tick` calls it on every
+   * quarter-second of a track's last seconds, only to find out whether there
+   * is anything to fade towards. So it has to answer the same way every time
+   * and do no work on the second ask — which rules out what used to be here, a
+   * fresh random index per call, and rules out reshuffling on the wrap. The
+   * one thing it does write is the order itself, once, if shuffle is on and
+   * nothing has built one yet.
    */
   private nextIndex(): number {
     const n = this.tracks.length;
