@@ -113,6 +113,94 @@ export function readAudio(key: string): Promise<Uint8Array | null> {
   return get(AUDIO_STORE, key);
 }
 
+/**
+ * Read one slice of a stored track, moving as few bytes as it can.
+ *
+ * This is the hot path of the whole site and it used to be the wasteful one.
+ * An <audio> element does not fetch a track, it fetches byte ranges of one —
+ * a few hundred kilobytes at a time while playing, and a fresh range every
+ * time the scrub bar moves. `readAudio` answered each of those by pulling the
+ * entire file out of storage and into the function's memory to hand back a
+ * slice of it, so a forty-megabyte lossless track cost forty megabytes per
+ * request no matter how little of it was wanted. A record played from end to
+ * end moved it dozens of times over.
+ *
+ * Neither Blobs nor a plain file offers a ranged read here, so the range is
+ * still applied on this side — but against a stream rather than a buffer, and
+ * the stream is cancelled the moment the slice is full. Cancelling closes the
+ * underlying response, so everything after the range is never transferred at
+ * all. Playback is a walk forwards through the file, which means the common
+ * case now moves roughly what it asks for.
+ *
+ * What is still paid is the head: a seek to the last minute of a track has to
+ * read past everything before it. Fixing that means storing the audio in
+ * addressable pieces rather than one object, which is a change to how uploads
+ * are written, not to how they are read.
+ *
+ * Locally the file is on disk and a positional read is exact, with no skipping
+ * at all.
+ */
+export async function readAudioRange(
+  key: string,
+  start: number,
+  /** Inclusive, as an HTTP range is. */
+  end: number,
+): Promise<Uint8Array | null> {
+  const length = end - start + 1;
+  if (length <= 0) return new Uint8Array(0);
+
+  if (usingLocalStore()) {
+    const { open } = await import("node:fs/promises");
+    let handle;
+    try {
+      handle = await open(await localPath(AUDIO_STORE, key), "r");
+    } catch {
+      return null;
+    }
+    try {
+      const out = new Uint8Array(length);
+      const { bytesRead } = await handle.read(out, 0, length, start);
+      return out.subarray(0, bytesRead);
+    } finally {
+      await handle.close().catch(() => {});
+    }
+  }
+
+  const stream = (await getStore(AUDIO_STORE).get(key, { type: "stream" })) as
+    | ReadableStream<Uint8Array>
+    | null;
+  if (!stream) return null;
+
+  const reader = stream.getReader();
+  const out = new Uint8Array(length);
+  let skipped = 0;
+  let filled = 0;
+
+  try {
+    while (filled < length) {
+      const { done, value } = await reader.read();
+      if (done || !value) break;
+
+      let chunk: Uint8Array = value;
+      if (skipped < start) {
+        const drop = Math.min(start - skipped, chunk.byteLength);
+        skipped += drop;
+        chunk = chunk.subarray(drop);
+        if (chunk.byteLength === 0) continue;
+      }
+
+      const take = Math.min(length - filled, chunk.byteLength);
+      out.set(chunk.subarray(0, take), filled);
+      filled += take;
+    }
+  } finally {
+    // The point of the exercise: this is what stops the tail being sent.
+    await reader.cancel().catch(() => {});
+  }
+
+  return out.subarray(0, filled);
+}
+
 export function writeAudio(key: string, body: Uint8Array): Promise<void> {
   return put(AUDIO_STORE, key, body);
 }

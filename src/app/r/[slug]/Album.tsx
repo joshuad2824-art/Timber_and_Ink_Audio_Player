@@ -62,7 +62,14 @@ export function Album({
 
         {record.intro && <p className={type_.handWide}>{record.intro}</p>}
 
-        <AlbumPlayer slug={record.slug} tracks={record.tracks} formats={formats} />
+        <AlbumPlayer
+          slug={record.slug}
+          tracks={record.tracks}
+          formats={formats}
+          artistName={record.artistName}
+          albumTitle={record.albumTitle}
+          coverUrl={record.coverUrl}
+        />
 
         <div className={`${type_.metaSmall} ${album.footer}`}>
           {record.artistName} · {record.year}

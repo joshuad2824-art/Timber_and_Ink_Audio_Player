@@ -24,6 +24,10 @@ export function useKept(slug: string, trackIds: string[], sizes: TrackAssetSizes
   const [supported, setSupported] = useState(false);
   const [kept, setKept] = useState<KeptMap>({});
   const [busy, setBusy] = useState<string | null>(null);
+  /* 0..1 while a track is coming down, null otherwise. A lossless track is
+     tens of megabytes: without this the only sign of a keep in progress was a
+     button that had gone grey, for a minute or more, on a phone. */
+  const [progress, setProgress] = useState<number | null>(null);
 
   /* Chosen once for the record, then held. Deciding per track would let an
      album end up half lossless and half not, which is the one outcome nobody
@@ -59,6 +63,7 @@ export function useKept(slug: string, trackIds: string[], sizes: TrackAssetSizes
     async (trackId: string, title: string): Promise<string> => {
       if (busy) return "";
       setBusy(trackId);
+      setProgress(null);
 
       try {
         if (kept[trackId]) {
@@ -67,7 +72,10 @@ export function useKept(slug: string, trackIds: string[], sizes: TrackAssetSizes
           return `Took ${title} back off this device.`;
         }
 
-        const result = await keepTrack(slug, trackId, sizes, preferred.current);
+        setProgress(0);
+        const result = await keepTrack(slug, trackId, sizes, preferred.current, (ratio) =>
+          setProgress(ratio),
+        );
         setKept(await readKept(slug));
 
         if (!result.ok) return result.error;
@@ -81,6 +89,7 @@ export function useKept(slug: string, trackIds: string[], sizes: TrackAssetSizes
         return `Kept ${title} — it'll play without a signal.`;
       } finally {
         setBusy(null);
+        setProgress(null);
       }
     },
     [busy, kept, sizes, slug],
@@ -88,5 +97,5 @@ export function useKept(slug: string, trackIds: string[], sizes: TrackAssetSizes
 
   const count = Object.keys(kept).length;
 
-  return { supported, kept, busy, toggle, count };
+  return { supported, kept, busy, progress, toggle, count };
 }

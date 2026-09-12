@@ -75,12 +75,30 @@ export async function recordFailure(
   `;
 }
 
-/** Clear an IP's failures after a success, so one good phrase resets the count. */
+/**
+ * Clear an IP's failures against one record after a success there.
+ *
+ * Scoped to the slug, which it was not. A success cleared every failure the
+ * address had recorded, against any record — so anyone holding one valid
+ * phrase could reset their own budget at will and go on guessing at every
+ * other record on the site indefinitely, ten tries at a time. The one phrase
+ * they were sent is not supposed to be a key to the rest of the shelf.
+ *
+ * The case this exists for is unaffected: a listener who fumbles their phrase
+ * twice and then types it correctly was failing against the record they have
+ * just opened, so their count goes.
+ *
+ * The desk passes its own constant slug, so its single door behaves as it did.
+ */
 export async function clearFailures(
   ip: string,
+  slug: string,
   scope: RateScope = "record",
 ): Promise<void> {
-  await db().sql`DELETE FROM unlock_attempt WHERE ip = ${ip} AND scope = ${scope}`;
+  await db().sql`
+    DELETE FROM unlock_attempt
+     WHERE ip = ${ip} AND slug = ${slug} AND scope = ${scope}
+  `;
 }
 
 /**

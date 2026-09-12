@@ -76,7 +76,7 @@ export async function POST(
     return NextResponse.json({ ok: false, error: PHRASE_WRONG }, { status: 401 });
   }
 
-  await clearFailures(ip);
+  await clearFailures(ip, slug);
 
   const expiresAt = Date.now() + UNLOCK_DAYS * 24 * 60 * 60 * 1000;
   const response = NextResponse.json({ ok: true });

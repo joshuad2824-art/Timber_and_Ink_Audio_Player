@@ -39,6 +39,21 @@ export function parseDuration(text: string): number | null {
   return Number.isNaN(raw) ? null : Math.round(raw);
 }
 
+/**
+ * `3 artists` — distinct names, not a count of records.
+ *
+ * The catalog footer said "artists" while counting rows, so a shelf holding
+ * two records by the same person announced two artists. Folded and trimmed
+ * before counting, because the owner types the name once per record by hand
+ * and a stray capital or a trailing space is not a second musician.
+ */
+export function artistLine(names: string[]): string {
+  const distinct = new Set(
+    names.map((name) => name.trim().toLowerCase()).filter(Boolean),
+  ).size;
+  return `${distinct} ${distinct === 1 ? "artist" : "artists"}`;
+}
+
 /** `2026 · 10 tracks · 42 min` — the meta line under an album title. */
 export function recordMeta(
   year: number,

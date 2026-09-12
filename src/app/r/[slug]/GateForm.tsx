@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { PaperCard } from "@/ui/devices";
 import { PHRASE_EMPTY } from "@/data/phrase";
@@ -22,8 +22,17 @@ export function GateForm({ slug }: { slug: string }) {
   const [nudge, setNudge] = useState("");
   const [busy, setBusy] = useState(false);
 
+  /* The right phrase is answered by a re-render of the page as the album, and
+     `router.refresh()` is not something you can await — so without this the
+     button greyed for the length of the request and came back looking exactly
+     as it had before, seconds before the screen changed. On a slow connection
+     that reads as a press that did not take, and the next thing a listener
+     does is press it again. `useTransition` is the only thing that knows the
+     refresh is still in flight. */
+  const [opening, startOpening] = useTransition();
+
   async function submit() {
-    if (busy) return;
+    if (busy || opening) return;
 
     // The empty case is answered here rather than spent on a round trip; the
     // wording matches what the server would have said.
@@ -43,7 +52,7 @@ export function GateForm({ slug }: { slug: string }) {
       });
 
       if (res.ok) {
-        router.refresh();
+        startOpening(() => router.refresh());
         return;
       }
 
@@ -62,46 +71,52 @@ export function GateForm({ slug }: { slug: string }) {
 
   return (
     <PaperCard className={gate.card} tape={{ placement: "topLeft", tone: "cream" }}>
-      <label className={gate.label} htmlFor="phrase">
-        The phrase
-      </label>
-
-      <input
-        id="phrase"
-        className={gate.input}
-        type="text"
-        value={phrase}
-        placeholder="the phrase"
-        autoComplete="off"
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck={false}
-        aria-label="Access phrase"
-        aria-invalid={nudge ? true : undefined}
-        aria-describedby="phrase-nudge"
-        onChange={(e) => setPhrase(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            void submit();
-          }
+      {/* A real form, so a phone's keyboard offers "go" on the return key
+          rather than a plain newline the input has to catch by hand. */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
         }}
-      />
-
-      {/* Keeps its height when empty, so the card never reflows under the
-          reader's hands as an error appears or clears. */}
-      <div id="phrase-nudge" className={gate.errorSlot} role="status" aria-live="polite">
-        {nudge}
-      </div>
-
-      <button
-        type="button"
-        className={gate.button}
-        onClick={() => void submit()}
-        disabled={busy}
       >
-        Come in
-      </button>
+        <label className={gate.label} htmlFor="phrase">
+          The phrase
+        </label>
+
+        <input
+          id="phrase"
+          className={gate.input}
+          type="text"
+          value={phrase}
+          placeholder="the phrase"
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-label="Access phrase"
+          aria-invalid={nudge ? true : undefined}
+          aria-describedby="phrase-nudge"
+          onChange={(e) => setPhrase(e.target.value)}
+          disabled={opening}
+        />
+
+        {/* Keeps its height when empty, so the card never reflows under the
+            reader's hands as an error appears or clears. */}
+        <div id="phrase-nudge" className={gate.errorSlot} role="alert">
+          {nudge}
+        </div>
+
+        {/* The label carries the pending state rather than a spinner: there
+            are no spinners anywhere in this design, and the one thing worth
+            saying while the album loads is that the phrase was right. */}
+        <button
+          type="submit"
+          className={gate.button}
+          disabled={busy || opening}
+        >
+          {opening ? "Opening it" : "Come in"}
+        </button>
+      </form>
     </PaperCard>
   );
 }

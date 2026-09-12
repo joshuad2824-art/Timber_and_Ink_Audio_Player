@@ -1,7 +1,8 @@
 .page {
   max-width: min(var(--sh-width-desk), 100%);
   margin: 0 auto;
-  padding: 26px var(--sh-gutter) 90px;
+  padding: calc(var(--sh-safe-top) + 26px) var(--sh-gutter-right)
+    calc(90px + var(--sh-safe-bottom)) var(--sh-gutter-left);
 }
 
 .header {

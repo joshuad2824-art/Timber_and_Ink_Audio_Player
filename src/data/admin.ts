@@ -189,6 +189,31 @@ export function toSlug(input: string): string {
   return base || `record-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/**
+ * The same slug, made free.
+ *
+ * `slug` is UNIQUE in the schema and a draft's slug follows its title, so two
+ * drafts named the same thing collided — and the collision surfaced as a
+ * rejected write, which the editor did not check for: the title simply snapped
+ * back to what it had been, with nothing said. Naming two records the same is
+ * an ordinary thing to do, so it should work rather than report.
+ *
+ * Suffixed with a number rather than a random token, because the owner sees
+ * this in the URL they send out: "harbour-light-2" is a second record with the
+ * same name, which is what happened.
+ */
+export async function uniqueSlug(base: string, exceptId: string): Promise<string> {
+  for (let n = 1; n <= 50; n++) {
+    const candidate = n === 1 ? base : `${base}-${n}`;
+    const rows = (await db().sql`
+      SELECT 1 FROM record WHERE slug = ${candidate} AND id <> ${exceptId} LIMIT 1
+    `) as unknown as Array<unknown>;
+    if (rows.length === 0) return candidate;
+  }
+  // Fifty records with one name is not a naming problem any more.
+  return `${base}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 /** Create a draft. Drafts are invisible everywhere until published. */
 export async function createRecord(): Promise<string> {
   const id = newId("rec");
@@ -262,10 +287,68 @@ export async function setRecordPhrase(id: string, phrase: string): Promise<void>
   await db().sql`UPDATE record SET phrase_hash = ${hash} WHERE id = ${id}`;
 }
 
+/**
+ * Every blob key belonging to one record's tracks.
+ *
+ * Read before the rows go, and that ordering is the whole point: `track_asset`
+ * cascades from `record`, so the moment the delete lands there is nothing left
+ * anywhere that says which files in storage belonged to it.
+ */
+async function audioKeysForRecord(id: string): Promise<string[]> {
+  const rows = (await db().sql`
+    SELECT a.blob_key
+      FROM track_asset a
+      JOIN track t ON t.id = a.track_id
+     WHERE t.record_id = ${id}
+  `) as unknown as Array<{ blob_key: string }>;
+  return rows.map((row) => row.blob_key);
+}
+
+async function audioKeysForTrack(recordId: string, trackId: string): Promise<string[]> {
+  const rows = (await db().sql`
+    SELECT a.blob_key
+      FROM track_asset a
+      JOIN track t ON t.id = a.track_id
+     WHERE t.record_id = ${recordId} AND t.id = ${trackId}
+  `) as unknown as Array<{ blob_key: string }>;
+  return rows.map((row) => row.blob_key);
+}
+
+/**
+ * Best effort, and after the rows are gone.
+ *
+ * A record the owner has deleted is deleted whether or not object storage is
+ * answering today — so this never runs before the delete and never fails it.
+ * What it costs when it does fail is some bytes nobody points at; what the
+ * other order would cost is a delete that appears not to have worked.
+ */
+async function sweepAudio(keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  try {
+    const { deleteAudio } = await import("./storage");
+    await Promise.all(keys.map((key) => deleteAudio(key).catch(() => {})));
+  } catch {
+    /* ignored on purpose */
+  }
+}
+
+/**
+ * Remove a record, and the files behind it.
+ *
+ * The comment here used to say the blobs were "swept separately". There was no
+ * separate sweep and never had been, so every deleted record left its whole
+ * lossless master set in storage for good — a 42-minute album is upwards of
+ * 400 MB of FLAC, and the row that named it was gone.
+ */
 export async function deleteRecord(id: string): Promise<void> {
-  // Tracks and their assets cascade; the blobs themselves are swept separately
-  // so that a delete is never waiting on object storage to answer.
+  const audio = await audioKeysForRecord(id);
+  const cover = await currentCoverKey(id);
+
+  // Tracks and their assets cascade.
   await db().sql`DELETE FROM record WHERE id = ${id}`;
+
+  await sweepAudio(audio);
+  if (cover) await sweepCover(cover);
 }
 
 /**
@@ -399,7 +482,9 @@ export async function patchTrack(
 }
 
 export async function deleteTrack(recordId: string, trackId: string): Promise<void> {
+  const audio = await audioKeysForTrack(recordId, trackId);
   await db().sql`DELETE FROM track WHERE id = ${trackId} AND record_id = ${recordId}`;
+  await sweepAudio(audio);
 }
 
 export async function updateSiteText(text: SiteText): Promise<void> {

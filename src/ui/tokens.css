@@ -94,6 +94,25 @@
   /* The album screen reserves this much for the fixed player bar. */
   --sh-player-clearance: 168px;
 
+  /* The notch, and the rounded corners either side of it in landscape.
+
+     `viewportFit: cover` is set deliberately — it is what lets the player bar
+     reach the bottom edge of the screen instead of floating above a white
+     strip — and the price of it is that the page now starts underneath the
+     status bar. Every screen that begins at the top of the viewport has to add
+     the inset back, or the back link sits behind the clock on exactly the
+     device this design is drawn for. The `0px` fallbacks matter: a browser
+     that does not know `env()` must get a length here, not nothing. */
+  --sh-safe-top: env(safe-area-inset-top, 0px);
+  --sh-safe-left: env(safe-area-inset-left, 0px);
+  --sh-safe-right: env(safe-area-inset-right, 0px);
+  --sh-safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* The side gutter with the landscape insets already in it. Screens use this
+     rather than --sh-gutter so there is one place to get it right. */
+  --sh-gutter-left: calc(var(--sh-gutter) + var(--sh-safe-left));
+  --sh-gutter-right: calc(var(--sh-gutter) + var(--sh-safe-right));
+
   /* ===================== type sizes the design actually uses ===================== */
   --sh-text-page-title: clamp(34px, 10vw, 50px);
   --sh-text-gate-title: clamp(32px, 10vw, 48px);

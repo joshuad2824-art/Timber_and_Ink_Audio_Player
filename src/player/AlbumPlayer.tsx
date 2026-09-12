@@ -32,11 +32,20 @@ export function AlbumPlayer({
   slug,
   tracks,
   formats,
+  artistName,
+  albumTitle,
+  coverUrl,
 }: {
   slug: string;
   tracks: Track[];
   /** Which encodings each track has, and what they weigh. */
   formats: TrackAssetSizes;
+  /* Who made it and what it is called. Not shown here — the page above has
+     already said both — but the lock screen has not, and a bare song title
+     there reads as a loose file rather than as a track off a record. */
+  artistName: string;
+  albumTitle: string;
+  coverUrl?: string;
 }) {
   /* A track is playable when it has the streaming encoding. The MP3 exists for
      downloads and as the fallback for a device with no room for lossless; it is
@@ -64,8 +73,12 @@ export function AlbumPlayer({
   useEffect(() => () => engine.destroy(), [engine]);
 
   useEffect(() => {
-    engine.load(slug, queue, "flac");
-  }, [engine, slug, queue]);
+    engine.load(slug, queue, "flac", {
+      artist: artistName,
+      album: albumTitle,
+      coverUrl,
+    });
+  }, [engine, slug, queue, artistName, albumTitle, coverUrl]);
 
   const currentId = queue[state.index]?.id;
 
@@ -103,7 +116,14 @@ export function AlbumPlayer({
           const isPlaying = isCurrent && state.playing;
 
           const play = () => {
-            if (!isPlayable) return;
+            /* A row with no file behind it is listed but cannot start, and
+               saying so is the point — tapping it and getting nothing at all
+               reads as a broken row rather than as a record still being
+               finished. */
+            if (!isPlayable) {
+              say("That one's not up yet. The sound is coming.");
+              return;
+            }
             // Clicking the playing row pauses it. That is how the design
             // reads, and it saves a trip to the bar for the common case.
             if (isPlaying) engine.pause();
@@ -142,8 +162,17 @@ export function AlbumPlayer({
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className={album.trackTitle}>{track.title}</span>
+                {/* The running time, except while this track is coming down
+                    to the device, when it is how far down it has come. A
+                    lossless track is tens of megabytes and the bookmark going
+                    grey was the whole of the feedback; the count belongs where
+                    the eye already is rather than in a new device of its own. */}
                 <span className={`${type_.meta} ${album.trackTime}`}>
-                  {isPlayable ? formatDuration(track.seconds) : "—"}
+                  {offline.busy === track.id && offline.progress !== null
+                    ? `${Math.round(offline.progress * 100)}%`
+                    : isPlayable
+                      ? formatDuration(track.seconds)
+                      : "—"}
                 </span>
               </div>
 

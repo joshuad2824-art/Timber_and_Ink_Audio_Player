@@ -8,27 +8,42 @@
   border-top: 2px solid var(--sh-brass);
   box-shadow: var(--sh-shadow-player);
   /* Without this the controls sit under the iOS home indicator. */
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--sh-safe-bottom);
 }
 
 .inner {
   max-width: min(var(--sh-width-album), 100%);
   margin: 0 auto;
-  padding: 0 var(--sh-gutter) 12px;
+  padding: 0 var(--sh-gutter-right) 12px var(--sh-gutter-left);
 }
 
 /* ── the scrub track ─────────────────────────────────────────────────────────
-   4px of visible track, but the hit area is 20px tall: a 4px target is
-   unusable with a thumb, and this is a phone-first design. */
+   4px of visible track, laid out in 20px, and 44px to actually hit — which is
+   the brief's floor for every control and the one place this bar was under it.
+
+   The extra 24px comes from a pseudo-element rather than from height, because
+   the bar has no 24px to spend: the fill goes downward over the now-playing
+   line, which is text and takes no taps of its own, and never upward, where it
+   would swallow presses on the page above the bar. A pseudo-element answers
+   for the element it belongs to, so pointer capture and currentTarget are
+   unchanged by any of this. */
 .scrub {
   position: relative;
   height: 20px;
-  margin: 0 calc(var(--sh-gutter) * -1);
-  padding: 0 var(--sh-gutter);
+  margin-left: calc(var(--sh-gutter-left) * -1);
+  margin-right: calc(var(--sh-gutter-right) * -1);
+  padding-left: var(--sh-gutter-left);
+  padding-right: var(--sh-gutter-right);
   display: flex;
   align-items: center;
   cursor: pointer;
   touch-action: none; /* so a horizontal drag seeks instead of scrolling */
+}
+
+.scrub::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -24px;
 }
 
 .scrubTrack {
@@ -36,13 +51,28 @@
   width: 100%;
   height: 4px;
   background: var(--sh-border-soft);
-  overflow: hidden;
 }
 
 .scrubFill {
   position: absolute;
   inset: 0 auto 0 0;
   background: var(--sh-ink-body);
+}
+
+/* The playhead: a pressed tick rather than a ball, and cream rather than
+   amber. Nothing here glows — the play button is the only lit thing in the
+   view — so the mark reads by being the one solid, taller shape on a hairline.
+   It sits above the track's own box on purpose; `overflow: hidden` on the
+   track would cut it in half at both ends of the record. */
+.scrubThumb {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 14px;
+  margin-left: -1.5px;
+  transform: translateY(-50%);
+  background: var(--sh-ink-body);
+  pointer-events: none;
 }
 
 .nowRow {
@@ -197,8 +227,8 @@
   text-align: right;
 }
 
-/* Shown only while a track is actually buffering, so it reads as information
-   rather than decoration. */
-.stalled {
+/* Shown only while something is actually wrong with the current track, so it
+   reads as information rather than decoration. */
+.trouble {
   color: var(--sh-warning);
 }

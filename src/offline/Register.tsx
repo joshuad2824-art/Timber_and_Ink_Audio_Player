@@ -26,7 +26,15 @@ export function RegisterServiceWorker() {
       return;
     }
 
-    void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+    /* The build id in the query is load-bearing, not decoration. `sw.js` is
+       served as a static file and its bytes do not change between deploys, so
+       without it the browser compares the two, finds them identical, and never
+       installs the new worker — leaving the shell and page caches at whatever
+       version first installed them. A changed URL is a new worker. */
+    const version = process.env.NEXT_PUBLIC_BUILD_ID ?? "1";
+    void navigator.serviceWorker
+      .register(`/sw.js?v=${encodeURIComponent(version)}`, { scope: "/" })
+      .catch(() => {});
   }, []);
 
   return null;

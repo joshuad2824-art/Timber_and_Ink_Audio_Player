@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { encodeFlac, encodeMp3, titleFromFilename } from "./encode";
 import { parseWav, WavError } from "./wav";
@@ -43,6 +43,34 @@ export function Upload({
   const input = useRef<HTMLInputElement>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
+
+  /* Two guards over the whole page, not just the drop zone.
+
+     The copy under this button says "Drop in WAV masters", and dropping one
+     anywhere the page does not claim it makes the browser navigate away and
+     open the file instead — off the desk, mid-upload, taking every job in
+     flight with it. Cancelling the default everywhere means a miss does
+     nothing at all, which is the least a miss should do. */
+  useEffect(() => {
+    const swallow = (e: DragEvent) => e.preventDefault();
+    window.addEventListener("dragover", swallow);
+    window.addEventListener("drop", swallow);
+    return () => {
+      window.removeEventListener("dragover", swallow);
+      window.removeEventListener("drop", swallow);
+    };
+  }, []);
+
+  /* And an encode is minutes of work that exists nowhere else: the WAV is
+     still on the owner's disk, but the FLAC and the MP3 being made from it are
+     only here. A reload halfway through starts the whole thing again. */
+  useEffect(() => {
+    if (!busy) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [busy]);
 
   function update(index: number, patch: Partial<Job>) {
     setJobs((prev) => prev.map((j, i) => (i === index ? { ...j, ...patch } : j)));
@@ -89,7 +117,18 @@ export function Upload({
     }
   }
 
-  async function handle(files: FileList) {
+  /**
+   * A dropped file that is actually a WAV.
+   *
+   * Checked by extension rather than by type: a browser reports a .wav as
+   * audio/wav, audio/x-wav, audio/wave or nothing at all depending on the
+   * platform, and the parser will say soon enough if the bytes disagree.
+   */
+  function wavsOnly(list: File[]): File[] {
+    return list.filter((file) => file.name.toLowerCase().endsWith(".wav"));
+  }
+
+  async function handle(files: File[] | FileList) {
     setBusy(true);
     const list = Array.from(files);
     setJobs(list.map((f) => ({ name: f.name, stage: "Reading", ratio: 0 })));
@@ -144,7 +183,37 @@ export function Upload({
   }
 
   return (
-    <div className={styles.wrap}>
+    <div
+      className={`${styles.wrap} ${over ? styles.wrapOver : ""}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!busy) setOver(true);
+      }}
+      onDragLeave={(e) => {
+        // Only when the pointer has actually left this element, not when it
+        // has merely crossed onto the label or the job list inside it.
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setOver(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        if (busy) return;
+        const wavs = wavsOnly(Array.from(e.dataTransfer.files));
+        if (wavs.length === 0) {
+          setJobs([
+            {
+              name: "That wasn't a WAV",
+              stage: "Stopped",
+              ratio: 0,
+              error: "Masters come in as WAV. Nothing else is handled here.",
+            },
+          ]);
+          return;
+        }
+        void handle(wavs);
+      }}
+    >
       <input
         ref={input}
         type="file"

@@ -2,6 +2,17 @@ import type { Track } from "@/data/types";
 
 export type RepeatMode = "off" | "all" | "one";
 
+/**
+ * What is wrong with the current track, if anything.
+ *
+ * These were one boolean, and conflating them told a lie: a track whose file
+ * would not load, and a browser refusing to start audio without a gesture,
+ * both read as "Buffering" — a word that promises the music is on its way.
+ * `null` is the ordinary case, including a refused autoplay, where the
+ * transport reading as stopped is the whole truth.
+ */
+export type Trouble = null | "buffering" | "unplayable";
+
 export type PlayerSnapshot = {
   index: number;
   playing: boolean;
@@ -11,7 +22,14 @@ export type PlayerSnapshot = {
   repeat: RepeatMode;
   volume: number;
   crossfade: boolean;
-  stalled: boolean;
+  trouble: Trouble;
+};
+
+/** What the lock screen and the car stereo are told about the record. */
+export type RecordMeta = {
+  artist: string;
+  album: string;
+  coverUrl?: string;
 };
 
 const TICK_MS = 250;
@@ -94,7 +112,25 @@ export class PlayerEngine {
   private repeat: RepeatMode = "off";
   private volume = 0.85;
   private crossfadeEnabled = false;
-  private stalled = false;
+  private trouble: Trouble = null;
+  private meta: RecordMeta = { artist: "", album: "" };
+
+  /**
+   * The shuffle order: a permutation of the track indices, or null when
+   * playing in sequence.
+   *
+   * Built once when shuffle is switched on rather than drawn fresh at every
+   * advance. Rolling a die per track meant the record could never end — there
+   * was always another index to go to — and it could play the same song twice
+   * before it had played half of them. A permutation ends where an album ends,
+   * and every track comes round exactly once.
+   *
+   * Held for as long as shuffle is on, so repeat-all replays the same order.
+   * That is the predictable reading: the listener shuffled the record once and
+   * it stayed shuffled, rather than the running order changing underneath them
+   * on the second pass.
+   */
+  private order: number[] | null = null;
 
   /** Non-null only while a crossfade is actually ramping. */
   private fade: { from: 0 | 1; to: 0 | 1; startedAt: number; toIndex: number } | null =
@@ -159,10 +195,10 @@ export class PlayerEngine {
          track preloads and where a retired source gets dropped, and the drop
          itself fires `error` — which, taken at face value, left the bar
          reading "Buffering" over a track that was playing perfectly well. */
-      el.addEventListener("waiting", () => this.stallFrom(el, true));
-      el.addEventListener("playing", () => this.stallFrom(el, false));
-      el.addEventListener("canplay", () => this.stallFrom(el, false));
-      el.addEventListener("error", () => this.stallFrom(el, true));
+      el.addEventListener("waiting", () => this.troubleFrom(el, "buffering"));
+      el.addEventListener("playing", () => this.troubleFrom(el, null));
+      el.addEventListener("canplay", () => this.troubleFrom(el, null));
+      el.addEventListener("error", () => this.troubleFrom(el, "unplayable"));
     }
 
     this.pair = pair;
@@ -171,11 +207,12 @@ export class PlayerEngine {
 
   // ── wiring ────────────────────────────────────────────────────────────────
 
-  load(slug: string, tracks: Track[], format: "flac" | "mp3") {
+  load(slug: string, tracks: Track[], format: "flac" | "mp3", meta: RecordMeta) {
     const changed = this.slug !== slug || this.format !== format;
     this.slug = slug;
     this.tracks = tracks;
     this.format = format;
+    this.meta = meta;
     // Anything already on an element, or on its way to one, belongs to the old
     // record or encoding.
     if (changed) {
@@ -183,7 +220,12 @@ export class PlayerEngine {
       this.cancelFade();
       this.cancelRamp();
       this.loaded = [null, null];
+      this.setTrouble(null);
     }
+    /* The order is indices into this list, so a list of a different length is
+       a different order. Rebuilt on the next advance rather than here, because
+       `load` runs on every render that changes the queue. */
+    if (this.order && this.order.length !== tracks.length) this.order = null;
   }
 
   subscribe(fn: (s: PlayerSnapshot) => void): () => void {
@@ -204,7 +246,7 @@ export class PlayerEngine {
       repeat: this.repeat,
       volume: this.volume,
       crossfade: this.crossfadeEnabled,
-      stalled: this.stalled,
+      trouble: this.trouble,
     };
   }
 
@@ -233,6 +275,7 @@ export class PlayerEngine {
 
     const restarting = i === this.index;
     this.index = i;
+    this.setTrouble(null);
 
     const el = this.live();
     if (this.loaded[this.liveIndex] !== i) {
@@ -243,6 +286,17 @@ export class PlayerEngine {
     } else if (restarting && !this.playing) {
       // Same track, already loaded, currently stopped — resume where it sat.
       el.currentTime = this.position;
+    } else if (restarting) {
+      /* Same track, already playing. Asked for again, it starts again — the
+         only reading of a deliberate tap that is not "dip the volume to zero
+         and come back to exactly where you were", which is what doing nothing
+         here looked like. */
+      this.position = 0;
+      try {
+        el.currentTime = 0;
+      } catch {
+        /* not seekable yet; it will start from wherever it is */
+      }
     }
 
     await this.start();
@@ -285,16 +339,22 @@ export class PlayerEngine {
     try {
       await el.play();
       this.playing = true;
-      this.setStalled(false);
+      this.setTrouble(null);
       this.startTicking();
       this.rampTo(el, this.volume, fadeSeconds * 1000);
-    } catch {
-      // Autoplay refusal, or a track with no file behind it. Either way the
-      // transport should read as stopped rather than pretend to be running,
-      // and the element is left at the real level for the next attempt.
+    } catch (err) {
+      /* Two different refusals wearing one exception.
+
+         `NotAllowedError` is the browser declining to start audio without a
+         gesture. Nothing is wrong: the transport reads as stopped, which is
+         exactly what has happened, and the next tap will work. Saying
+         "Buffering" there was a lie that sent the listener off to check their
+         signal. Anything else — a missing file, a codec this browser will not
+         decode — is the track genuinely not playable, and the bar says so. */
+      const refused = err instanceof DOMException && err.name === "NotAllowedError";
       el.volume = this.volume;
       this.playing = false;
-      this.setStalled(true);
+      this.setTrouble(refused ? null : "unplayable");
     }
     this.emit();
     this.publishMediaSession();
@@ -335,9 +395,9 @@ export class PlayerEngine {
       this.seek(0);
       return;
     }
-    const n = this.tracks.length;
-    if (n === 0) return;
-    await this.playTrack((this.index - 1 + n) % n);
+    const to = this.previousIndex();
+    if (to < 0) return;
+    await this.playTrack(to);
   }
 
   async next() {
@@ -381,13 +441,32 @@ export class PlayerEngine {
     // track plays at whatever level the ramp had reached.
     if (!this.fade) el.volume = this.volume;
     this.emit();
+    this.publishPosition();
   }
 
   // ── modes ─────────────────────────────────────────────────────────────────
 
   setShuffle(on: boolean) {
     this.shuffle = on;
+    this.order = on ? this.buildOrder() : null;
     this.emit();
+  }
+
+  /**
+   * A fresh running order, with whatever is playing at the front of it.
+   *
+   * Current track first because shuffling is not a request to skip the song
+   * you are listening to. Fisher-Yates over the rest, which is the only common
+   * shuffle that draws every permutation with equal probability — sorting by a
+   * random comparator, the usual shortcut, does not.
+   */
+  private buildOrder(): number[] {
+    const rest = this.tracks.map((_, i) => i).filter((i) => i !== this.index);
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+    return this.tracks.length === 0 ? [] : [this.index, ...rest];
   }
 
   /**
@@ -483,6 +562,7 @@ export class PlayerEngine {
     }
 
     this.emit();
+    this.publishPosition();
   }
 
   // ── crossfade ─────────────────────────────────────────────────────────────
@@ -769,20 +849,56 @@ export class PlayerEngine {
     return track.seconds || 0;
   }
 
+  /**
+   * The next index, or -1 if the record stops here.
+   *
+   * Asked repeatedly and speculatively: `tick` calls it on every
+   * quarter-second of a track's last seconds, only to find out whether there
+   * is anything to fade towards. So it has to answer the same way every time
+   * and do no work on the second ask — which rules out what used to be here, a
+   * fresh random index per call, and rules out reshuffling on the wrap. The
+   * one thing it does write is the order itself, once, if shuffle is on and
+   * nothing has built one yet.
+   */
   private nextIndex(): number {
     const n = this.tracks.length;
     if (n === 0) return -1;
 
-    if (this.shuffle) {
-      if (n === 1) return this.repeat === "all" ? 0 : -1;
-      let i = this.index;
-      while (i === this.index) i = Math.floor(Math.random() * n);
-      return i;
+    const order = this.shuffle ? this.currentOrder() : null;
+    if (order) {
+      const at = order.indexOf(this.index);
+      // Not in the order — the queue changed under us. Start it again.
+      if (at < 0) return order[0] ?? -1;
+      if (at + 1 < order.length) return order[at + 1];
+      return this.repeat === "all" ? (order[0] ?? -1) : -1;
     }
 
     const i = this.index + 1;
     if (i >= n) return this.repeat === "all" ? 0 : -1;
     return i;
+  }
+
+  /** The shuffle order, built on the first ask if the queue arrived after it. */
+  private currentOrder(): number[] {
+    if (!this.order || this.order.length !== this.tracks.length) {
+      this.order = this.buildOrder();
+    }
+    return this.order;
+  }
+
+  /** The index before this one, which shuffle makes a question about order. */
+  private previousIndex(): number {
+    const n = this.tracks.length;
+    if (n === 0) return -1;
+
+    const order = this.shuffle ? this.currentOrder() : null;
+    if (order) {
+      const at = order.indexOf(this.index);
+      if (at <= 0) return order[order.length - 1] ?? -1;
+      return order[at - 1];
+    }
+
+    return (this.index - 1 + n) % n;
   }
 
   // ── lock screen ───────────────────────────────────────────────────────────
@@ -793,7 +909,24 @@ export class PlayerEngine {
     if (!track) return;
 
     try {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: track.title });
+      /* The artist and the record, not just the song. On a lock screen or a
+         car stereo this metadata is the only thing identifying what is
+         playing, and a bare title there reads as an untitled file rather than
+         as a track off a record somebody sent you. The sleeve comes along for
+         the same reason — the artwork slot is the largest thing on that
+         screen, and left empty it draws a grey box.
+
+         `sizes` is a guess by necessity: the cover is scaled to a 1400px long
+         edge on upload but is not square, and the platform only uses this to
+         pick between candidates. One entry means there is nothing to pick. */
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: this.meta.artist,
+        album: this.meta.album,
+        artwork: this.meta.coverUrl
+          ? [{ src: this.meta.coverUrl, sizes: "1400x1400", type: "image/jpeg" }]
+          : [],
+      });
       navigator.mediaSession.playbackState = this.playing ? "playing" : "paused";
       navigator.mediaSession.setActionHandler("play", () => void this.play());
       navigator.mediaSession.setActionHandler("pause", () => this.pause());
@@ -801,6 +934,57 @@ export class PlayerEngine {
       navigator.mediaSession.setActionHandler("nexttrack", () => void this.next());
     } catch {
       /* not supported on this browser */
+    }
+
+    /* Scrubbing, and the position the scrubber draws. Set apart from the
+       block above because these three are the newest of the API and the most
+       likely to be missing: a browser that throws on `setPositionState` should
+       still get the artwork and the transport buttons, which the single try
+       around everything did not give it.
+
+       Without these the lock screen shows a progress bar stuck at zero and a
+       scrubber that does nothing — worse than no bar at all, because it looks
+       like playback has stalled. */
+    try {
+      navigator.mediaSession.setActionHandler("seekto", (details) => {
+        if (typeof details.seekTime === "number") this.seek(details.seekTime);
+      });
+      navigator.mediaSession.setActionHandler("seekbackward", (details) => {
+        this.seek(this.position - (details.seekOffset ?? 10));
+      });
+      navigator.mediaSession.setActionHandler("seekforward", (details) => {
+        this.seek(this.position + (details.seekOffset ?? 10));
+      });
+    } catch {
+      /* this browser does not offer scrubbing */
+    }
+
+    this.publishPosition();
+  }
+
+  /**
+   * Keep the lock screen's progress bar honest.
+   *
+   * Separate from the metadata because it is published far more often — every
+   * tick, rather than every track change — and because a duration of zero or a
+   * position past the end throws rather than being ignored, which would take
+   * the whole tick down with it.
+   */
+  private publishPosition() {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    if (typeof navigator.mediaSession.setPositionState !== "function") return;
+
+    const duration = this.tracks[this.index]?.seconds ?? 0;
+    if (!Number.isFinite(duration) || duration <= 0) return;
+
+    try {
+      navigator.mediaSession.setPositionState({
+        duration,
+        position: Math.max(0, Math.min(duration, this.position)),
+        playbackRate: 1,
+      });
+    } catch {
+      /* a position the platform would not take; the bar simply does not move */
     }
   }
 
@@ -827,14 +1011,18 @@ export class PlayerEngine {
     }
   }
 
-  private stallFrom(el: HTMLAudioElement, v: boolean) {
+  private troubleFrom(el: HTMLAudioElement, v: Trouble) {
     if (el !== this.live()) return;
-    this.setStalled(v);
+    /* Buffering must never overwrite a track that has already failed: a dead
+       element fires `waiting` on the way to giving up, and the last word in
+       would have been the reassuring one. */
+    if (v === "buffering" && this.trouble === "unplayable") return;
+    this.setTrouble(v);
   }
 
-  private setStalled(v: boolean) {
-    if (this.stalled === v) return;
-    this.stalled = v;
+  private setTrouble(v: Trouble) {
+    if (this.trouble === v) return;
+    this.trouble = v;
     this.emit();
   }
 
@@ -846,7 +1034,15 @@ export class PlayerEngine {
     // create two elements for the sole purpose of tearing them down.
     for (const el of this.pair ?? []) {
       el.pause();
-      el.src = "";
+      /* `removeAttribute`, not `src = ""` — the empty string resolves against
+         the page, so every teardown sent the element off to fetch the HTML
+         document and read it as audio. The same trap releaseSource documents. */
+      el.removeAttribute("src");
+      try {
+        el.load();
+      } catch {
+        /* nothing to reset */
+      }
     }
     this.loaded = [null, null];
     this.listeners.clear();

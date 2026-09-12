@@ -6,7 +6,7 @@ import { KeyCap, PairedRule, PressedPlate } from "@/ui/devices";
 import { isUnlocked, listCatalog, getSiteText } from "@/data/catalog";
 import { isAdmin } from "@/data/admin";
 import { AdminBar } from "@/chrome/AdminBar";
-import { recordMeta } from "@/data/phrase";
+import { artistLine, recordMeta } from "@/data/phrase";
 import type { RecordState } from "@/data/types";
 import styles from "./catalog.module.css";
 import type_ from "@/ui/type.module.css";
@@ -45,8 +45,7 @@ export default async function CatalogPage() {
   const drafts = records.filter((r) => !r.published).length;
 
   // The count is live; the tail is the owner's copy.
-  const artists = `${records.length} ${records.length === 1 ? "artist" : "artists"}`;
-  const footerLine = `${artists} · ${siteText.footer}`;
+  const footerLine = `${artistLine(records.map((r) => r.artistName))} · ${siteText.footer}`;
 
   return (
     <Backdrop>

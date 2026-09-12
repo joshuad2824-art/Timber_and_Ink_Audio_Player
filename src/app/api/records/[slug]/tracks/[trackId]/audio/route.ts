@@ -1,5 +1,5 @@
 import { getTrackAsset } from "@/data/catalog";
-import { readAudio, type AudioFormat } from "@/data/storage";
+import { readAudio, readAudioRange, type AudioFormat } from "@/data/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -36,10 +36,15 @@ export async function GET(
   const asset = await getTrackAsset(slug, trackId, format);
   if (!asset) return new Response("Not found", { status: 404 });
 
-  const bytes = await readAudio(asset.blobKey);
-  if (!bytes) return new Response("Not found", { status: 404 });
+  /* The length as recorded when the file was assembled, rather than as
+     measured by reading the file. Measuring meant fetching every byte before
+     the first header could be written — which for a range request is the whole
+     forty megabytes to answer a question about sixty-four kilobytes of it. */
+  const total = asset.bytes;
+  if (!Number.isFinite(total) || total <= 0) {
+    return new Response("Not found", { status: 404 });
+  }
 
-  const total = bytes.byteLength;
   const range = request.headers.get("range");
 
   const common: Record<string, string> = {
@@ -52,9 +57,13 @@ export async function GET(
   };
 
   if (!range) {
+    // The whole file: a download, or a track being kept on a device.
+    const bytes = await readAudio(asset.blobKey);
+    if (!bytes) return new Response("Not found", { status: 404 });
+
     return new Response(bytes as unknown as BodyInit, {
       status: 200,
-      headers: { ...common, "content-length": String(total) },
+      headers: { ...common, "content-length": String(bytes.byteLength) },
     });
   }
 
@@ -95,14 +104,30 @@ export async function GET(
   }
 
   end = Math.min(end, total - 1);
-  const slice = bytes.subarray(start, end + 1);
+
+  const slice = await readAudioRange(asset.blobKey, start, end);
+  if (!slice) return new Response("Not found", { status: 404 });
+
+  /* Answered against what actually came back, not against what was asked for.
+     The stored length and the stored bytes agree in every ordinary case — the
+     length is written from the assembled file — but a Content-Range that
+     overstates its own body is the one way to make a player hang waiting for
+     data that is not coming. */
+  if (slice.byteLength === 0) {
+    return new Response(null, {
+      status: 416,
+      headers: { ...common, "content-range": `bytes */${total}` },
+    });
+  }
+
+  const last = start + slice.byteLength - 1;
 
   return new Response(slice as unknown as BodyInit, {
     status: 206,
     headers: {
       ...common,
       "content-length": String(slice.byteLength),
-      "content-range": `bytes ${start}-${end}/${total}`,
+      "content-range": `bytes ${start}-${last}/${total}`,
     },
   });
 }

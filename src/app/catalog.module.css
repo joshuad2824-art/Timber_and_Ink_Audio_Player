@@ -1,7 +1,8 @@
 .page {
   max-width: min(var(--sh-width-catalog), 100%);
   margin: 0 auto;
-  padding: 56px var(--sh-gutter) 48px;
+  padding: calc(var(--sh-safe-top) + 56px) var(--sh-gutter-right)
+    calc(48px + var(--sh-safe-bottom)) var(--sh-gutter-left);
 }
 
 .intro {
