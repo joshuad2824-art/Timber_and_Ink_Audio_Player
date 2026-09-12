@@ -92,16 +92,27 @@ The prototype checks phrases in the browser and prints them on screen. In produc
 - **Like counts are real but not social.** Persisted server-side, idempotent per
   device. Nobody is shown who else liked anything.
 - **Tracks are spaced, not butted together.** With the Crossfade switch off —
-  which is the default — a track's tail ramps down inside its own last 1.6
-  seconds, two and a half seconds of silence follow, and the next one ramps up
-  over 1.2. With it on they overlap on the linear ramp instead and there is no
-  silence. Nothing starts or stops at full volume either way, a tap on the
-  transport included; the last track of a record is the one exception, because
-  an ending that was mastered to end is not one to fade. Repeat-one loops
-  through the same silence rather than snapping back to zero.
+  which is the default — a track's tail ramps down inside its own last 2
+  seconds, three seconds of silence follow, and the next one ramps up over 1.6.
+  With it on they overlap on the linear ramp instead and there is no silence.
+  Nothing starts or stops at full volume either way, a tap on the transport
+  included; the last track of a record is the one exception, because an ending
+  that was mastered to end is not one to fade. Repeat-one loops through the same
+  silence rather than snapping back to zero.
+- **Every ramp is eased, not linear.** A raised cosine, flat at both ends: a
+  straight line changes volume at a constant rate, so it starts and stops moving
+  abruptly even though the level never jumps, and that corner is the part a
+  listener hears as the fade beginning. The crossfade is the exception and stays
+  linear, because the design spec asks for linear there.
 - **The repeat button has three states, in this order**: off, the whole album,
   this song, off again. The bar swaps to the `repeat-1` glyph on the second
-  press, which is the only thing that distinguishes the last two.
+  press, which is what distinguishes the last two.
+- **Shuffle and repeat are gold when on, cream when off.** They are the only two
+  controls that hold a state, so they are the only two that change colour, and
+  the rest of the transport sits at the same cream as their off state. Brass
+  gold, never amber — a toggle that glowed would be a second lit thing. The
+  engaged glyph also carries a heavier stroke, so the state does not rest on
+  hue alone.
 
 ## Open questions for the owner
 

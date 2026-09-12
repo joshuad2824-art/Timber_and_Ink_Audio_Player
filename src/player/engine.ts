@@ -17,17 +17,31 @@ export type PlayerSnapshot = {
 const TICK_MS = 250;
 const CROSSFADE_SECONDS = 4;
 
-/* A quarter-second tick is far too coarse for a volume ramp — six steps down a
-   fade-out is audible as six steps — so ramps get their own faster timer. */
-const RAMP_MS = 50;
+/* A quarter-second tick is far too coarse for a volume ramp — four steps down a
+   fade-out is audible as four steps — so ramps get their own faster timer. At
+   40 steps a second the curve below is a curve rather than a staircase. */
+const RAMP_MS = 25;
 /** The breath between two tracks: real silence, so they never run together. */
-const GAP_SECONDS = 2.5;
+const GAP_SECONDS = 3;
 /** The tail of a track, ramped down inside its own last seconds. */
-const FADE_OUT_SECONDS = 1.6;
+const FADE_OUT_SECONDS = 2;
 /** The head of the next one, ramped up once the silence is over. */
-const FADE_IN_SECONDS = 1.2;
+const FADE_IN_SECONDS = 1.6;
 /** Short enough that a tap still feels immediate, long enough to kill the click. */
-const CUE_FADE_SECONDS = 0.35;
+const CUE_FADE_SECONDS = 0.4;
+
+/**
+ * Ease a ramp's progress so it leaves and arrives at a standstill.
+ *
+ * A raised cosine: flat at both ends, steepest in the middle. A straight line
+ * changes volume at a constant rate, which means it starts and stops moving
+ * abruptly even though the level itself never jumps — and that corner is the
+ * part a listener hears as the fade beginning. Easing the ends hides both the
+ * moment a track starts to go and the moment the next one finishes arriving.
+ */
+function eased(k: number): number {
+  return 0.5 - 0.5 * Math.cos(Math.PI * k);
+}
 
 const VOLUME_KEY = "shadowharbor.volume";
 const CROSSFADE_KEY = "shadowharbor.crossfade";
@@ -43,11 +57,12 @@ const CROSSFADE_KEY = "shadowharbor.crossfade";
  *
  * There are two ways across the seam between tracks and the Crossfade switch
  * picks one. Off, which is the default, the outgoing track ramps down through
- * its own last seconds, two and a half seconds of silence follow, and the next
- * one ramps up — a record puts a gap between songs and so does this. On, they
- * overlap on a linear ramp and there is no silence at all. Either way nothing
- * starts or stops at full volume, which is the whole point: a cut is the one
- * transition that sounds like a machine.
+ * its own last seconds, three seconds of silence follow, and the next one ramps
+ * up — a record puts a gap between songs and so does this. On, they overlap on
+ * a linear ramp and there is no silence at all. Either way nothing starts or
+ * stops at full volume, and no ramp starts or stops at a constant rate either,
+ * which is the whole point: a cut is the one transition that sounds like a
+ * machine, and a straight line is the one fade you can hear begin.
  *
  * Deliberately not a React hook. Playback has to survive re-renders untouched —
  * a state change mid-crossfade must not restart a ramp or reset a volume — so
@@ -546,15 +561,15 @@ export class PlayerEngine {
   // ── the gap between tracks ────────────────────────────────────────────────
 
   /**
-   * Two and a half seconds of silence, then the next track fades in.
+   * Three seconds of silence, then the next track fades in.
    *
    * The handover happens at the start of the silence rather than the end of it:
    * the next track becomes the current one immediately, cued at zero with its
    * volume at zero and its file already loading. So the bar says what is
    * coming, the lock screen agrees, pressing pause stops on the cued track
-   * instead of snapping back to the finished one, and the two and a half
-   * seconds are spent buffering, which is most of why the first second of the
-   * next track does not stall.
+   * instead of snapping back to the finished one, and the three seconds are
+   * spent buffering, which is most of why the first second of the next track
+   * does not stall.
    *
    * It stays on the element the listener started, not the idle one. iOS only
    * lets an element play unprompted once that element has had a tap, so handing
@@ -641,7 +656,7 @@ export class PlayerEngine {
     }
 
     const k = Math.min(1, (performance.now() - r.startedAt) / r.ms);
-    r.el.volume = Math.max(0, Math.min(1, r.from + (r.to - r.from) * k));
+    r.el.volume = Math.max(0, Math.min(1, r.from + (r.to - r.from) * eased(k)));
     if (k < 1) return;
 
     this.ramp = null;
