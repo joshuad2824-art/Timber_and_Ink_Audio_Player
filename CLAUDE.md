@@ -33,6 +33,7 @@ src/
   routes/      catalog · record (gate + album) · admin (desk · editor · sign-in)
   player/      audio engine (two elements, crossfade), player bar, progress, volume
   data/        catalog client, types, phrase check
+  offline/     Cache API client, keep panel, bookmark button
   ui/          tokens.css + the small set of primitives the design actually uses
   chrome/      admin bar, toast slot, background layers (washes · wear · grain · vignette)
 ```

@@ -49,3 +49,20 @@ export type SiteText = {
 
 /** What the catalog row's chip says. Draft and Unlisted are admin-only. */
 export type RecordState = "Open" | "Locked" | "Draft" | "Unlisted";
+
+/**
+ * The two encodings a listener is ever given. The WAV master is not one of
+ * them: it is archival, and streaming it would cost 1.7x the bytes of the FLAC
+ * for audio that decodes identically.
+ */
+export type ListenFormat = "flac" | "mp3";
+
+/**
+ * What each track's encodings weigh, in bytes, keyed by track id.
+ *
+ * Read from storage rather than estimated from duration. How well a track
+ * compresses to FLAC depends on the music — a quiet record can come in at half
+ * what a loud one does — and "Keep it on your device" has to quote a number
+ * the device will really have to find room for.
+ */
+export type TrackAssetSizes = Record<string, Partial<Record<ListenFormat, number>>>;

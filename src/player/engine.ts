@@ -33,7 +33,19 @@ const CROSSFADE_KEY = "shadowharbor.crossfade";
  * the engine owns the elements and React subscribes to snapshots of it.
  */
 export class PlayerEngine {
-  private els: [HTMLAudioElement, HTMLAudioElement];
+  /**
+   * The two elements, or null until something needs them.
+   *
+   * Not built in the constructor. The component that owns the engine is a
+   * client component, and Next renders client components on the server too —
+   * so the constructor runs in a place where `Audio` does not exist. Doing it
+   * there threw `ReferenceError: Audio is not defined` and turned a direct
+   * visit to an already-unlocked record into a 500: the gate worked, because
+   * arriving through it re-renders on the client, and then the bookmark that
+   * record's own copy tells you to keep was broken.
+   */
+  private pair: [HTMLAudioElement, HTMLAudioElement] | null = null;
+
   private liveIndex: 0 | 1 = 0;
   private tracks: Track[] = [];
   private slug = "";
@@ -66,8 +78,23 @@ export class PlayerEngine {
   private listeners = new Set<(s: PlayerSnapshot) => void>();
 
   constructor() {
-    this.els = [new Audio(), new Audio()];
-    for (const el of this.els) {
+    // Reads localStorage inside a try, so this is safe off a browser.
+    this.restorePreferences();
+  }
+
+  /**
+   * The element pair, built on first use.
+   *
+   * Everything that touches an element goes through here, which puts the DOM
+   * work on the first call that actually wants the DOM — and every such call
+   * comes from an event handler or an effect, both of which only ever run in a
+   * browser.
+   */
+  private els(): [HTMLAudioElement, HTMLAudioElement] {
+    if (this.pair) return this.pair;
+
+    const pair: [HTMLAudioElement, HTMLAudioElement] = [new Audio(), new Audio()];
+    for (const el of pair) {
       el.preload = "none";
       /* No crossOrigin. The audio route is same-origin, so the unlock cookie
          rides along automatically; setting it would force a CORS code path for
@@ -79,7 +106,8 @@ export class PlayerEngine {
       el.addEventListener("error", () => this.setStalled(true));
     }
 
-    this.restorePreferences();
+    this.pair = pair;
+    return pair;
   }
 
   // ── wiring ────────────────────────────────────────────────────────────────
@@ -121,7 +149,7 @@ export class PlayerEngine {
   }
 
   private live(): HTMLAudioElement {
-    return this.els[this.liveIndex];
+    return this.els()[this.liveIndex];
   }
 
   private srcFor(i: number): string {
@@ -310,7 +338,7 @@ export class PlayerEngine {
     if (to < 0) return;
 
     const idle = (1 - this.liveIndex) as 0 | 1;
-    const el = this.els[idle];
+    const el = this.els()[idle];
     el.src = this.srcFor(to);
     this.loaded[idle] = to;
     el.currentTime = 0;
@@ -337,8 +365,8 @@ export class PlayerEngine {
 
     // Linear, as the design specifies. An equal-power curve would hold the
     // perceived loudness steadier, but the brief asks for a linear ramp.
-    this.els[from].volume = this.volume * (1 - k);
-    this.els[to].volume = this.volume * k;
+    this.els()[from].volume = this.volume * (1 - k);
+    this.els()[to].volume = this.volume * k;
 
     if (k >= 1) this.finishFade();
     else this.emit();
@@ -349,15 +377,15 @@ export class PlayerEngine {
     const { from, to, toIndex } = this.fade;
     this.fade = null;
 
-    const old = this.els[from];
+    const old = this.els()[from];
     old.pause();
     old.src = "";
     this.loaded[from] = null;
 
     this.liveIndex = to;
     this.index = toIndex;
-    this.els[to].volume = this.volume;
-    this.position = this.els[to].currentTime;
+    this.els()[to].volume = this.volume;
+    this.position = this.els()[to].currentTime;
 
     this.emit();
     this.publishMediaSession();
@@ -366,8 +394,8 @@ export class PlayerEngine {
   private cancelFade() {
     if (!this.fade) return;
     const { to } = this.fade;
-    this.els[to].pause();
-    this.els[to].src = "";
+    this.els()[to].pause();
+    this.els()[to].src = "";
     this.loaded[to] = null;
     this.fade = null;
     this.live().volume = this.volume;
@@ -378,7 +406,7 @@ export class PlayerEngine {
   private onEnded(el: HTMLAudioElement) {
     // During a fade the outgoing element ends on its own; that is the ramp
     // completing, not the record advancing.
-    if (this.fade && el === this.els[this.fade.from]) return;
+    if (this.fade && el === this.els()[this.fade.from]) return;
 
     if (this.repeat === "one") {
       el.currentTime = 0;
@@ -465,7 +493,9 @@ export class PlayerEngine {
 
   destroy() {
     this.stopTicking();
-    for (const el of this.els) {
+    // Only what was actually built. Reaching through the accessor here would
+    // create two elements for the sole purpose of tearing them down.
+    for (const el of this.pair ?? []) {
       el.pause();
       el.src = "";
     }

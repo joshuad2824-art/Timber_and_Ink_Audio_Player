@@ -45,7 +45,8 @@ src/
   ui/         tokens.css, the type scale, and the decorative devices
   chrome/     background layers, admin bar, toast slot
   data/       types, phrase normalization, the catalog client
-  player/     audio engine, player bar, progress, volume   (milestone 3)
+  player/     audio engine, player bar, progress, volume
+  offline/    the Cache API client, the keep panel, the bookmark button
 netlify/
   database/migrations/
 design_handoff_shadow_harbor/
@@ -59,7 +60,8 @@ build plan before writing code.
 
 ## Where this is
 
-Milestone 4 of six, complete. See `design_handoff_shadow_harbor/BUILD.md` for the rest.
+Milestone 5 of six, complete apart from the download links. See
+`design_handoff_shadow_harbor/BUILD.md` for the rest.
 
 - [x] **1 — Shell and tokens.** Ported tokens, the four background layers, the
       decorative devices, the type scale, route skeletons.
@@ -72,7 +74,10 @@ Milestone 4 of six, complete. See `design_handoff_shadow_harbor/BUILD.md` for th
 - [x] **4 — The desk.** Auth, record CRUD, reorder, publish/listed flags,
       phrase editing, the record editor, site text with autosave, the admin bar,
       and WAV upload with in-browser FLAC/MP3 encoding.
-- [ ] **5 — Offline.** Service worker, manifest, cache-per-track.
+- [x] **5 — Offline.** Service worker, manifest, home-screen icons, the
+      "Keep it on your device" panel, a bookmark on every track row, and a
+      count read from the real Cache API. Still to come: the "Download the
+      files" rows.
 - [ ] **6 — Hardening.** Rate limits, audit logging, a keyboard pass, Lighthouse
       on a throttled phone.
 
@@ -135,6 +140,45 @@ uploading, reassembling, storing and decoding.
 - **Two audio elements**, because one cannot overlap the end of a track with the
   start of the next. They swap roles on each advance; the idle one is where the
   next track preloads and where a crossfade ramps up.
+
+## Offline
+
+A bookmark on a track row puts that track on the device; "Keep it on your
+device" opens the panel that explains the other half — adding the site to the
+home screen, where it opens without an address bar — and reports how many
+tracks are really there.
+
+- **The count is a measurement, not a note we kept.** `4 of 10 tracks are on
+  this device.` is computed from `cache.keys()` every time it changes. A browser
+  evicts caches when a device runs short of room and does not ask first, so a
+  figure remembered in `localStorage` would go on promising music for a journey
+  where there would be no way to get it.
+- **Lossless where there is room for it.** A record is kept as FLAC unless
+  `navigator.storage.estimate()` says the album will not fit inside two thirds
+  of what is free, and a refused write falls back to the MP3 once rather than
+  reporting failure. Whichever it gets, the whole album gets the same one — half
+  an album in lossless is the one outcome nobody would choose on purpose.
+- **The worker slices ranges itself.** `cache.match` ignores a Range header and
+  returns the whole file, which an `<audio>` element reads as "no ranges here"
+  and answers by refetching everything on every seek. Some browsers synthesise
+  the 206 now; not all of them do. The slicing goes through `Blob.slice`, so
+  seeking into a 40 MB track does not pull 40 MB into memory to hand back 64 KB.
+- **Only what was asked for.** Listening to a track does not cache it; a track
+  lands on the device because somebody chose to keep it. The catalog, the unlock
+  endpoint and every admin route always go to the network — a stale answer to
+  "is this record open on this device" would be a security bug wearing a
+  performance feature's clothes.
+- **"Lock it back" empties the device.** The cookie is what stops the server
+  sending tracks again, but the kept audio would still play — the worker answers
+  from the cache before it checks anything, and a file already here has no
+  cookie left to check — and the last album page would still be served offline.
+  Closing a record has to mean the device is empty of it.
+- **The offline page carries its own assets.** Caching the fallback document
+  alone fails in the worst way available: the HTML arrives, the framework
+  starts, its route chunk is missing, and the error boundary replaces the one
+  screen whose whole job is to be calm when nothing loads. The worker reads the
+  page's markup at install and keeps whatever it asks for, so there is no build
+  step to keep in step.
 
 ## Environment
 
@@ -203,8 +247,14 @@ SHADOW_HARBOR_SECRET=any-32-plus-character-string-for-dev npm run dev
   published phrase protects nothing. Treat the three seeded records as open to
   anyone who reads the repo, and reset every phrase from the desk (milestone 4)
   before real music goes behind one.
-- **Cover art and audio.** None was supplied with the handoff. The desk will
-  have upload paths for both, but there is nothing to listen to until real media
-  exists.
+- **Cover art.** Audio uploads work; the editor's cover drop target does not
+  yet. Nothing was supplied with the handoff either way.
+- **The download links.** `Download the files` — the MP3 format chip, the
+  whole-album row and the per-track rows — is the last piece of milestone 5.
+  The sizes are ready for it: `track_asset.bytes` is real, and
+  `getAvailableFormats` now returns it.
+- **Likes.** The `record_like` table exists and the decision is made — real
+  counts, idempotent per device, never showing who — but the endpoint and the
+  heart toggle are unbuilt.
 - **Answers to the open questions** at the bottom of `CLAUDE.md` — whether
   phrases expire, whether download links ship, whether like counts are shared.

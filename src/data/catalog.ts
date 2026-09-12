@@ -6,7 +6,14 @@ import { db } from "./db";
 import { isAdmin } from "./admin";
 import { unlockCookieName, verifyUnlock } from "./crypto";
 import type { AudioFormat } from "./storage";
-import type { RecordDetail, RecordSummary, SiteText, Track } from "./types";
+import type {
+  ListenFormat,
+  RecordDetail,
+  RecordSummary,
+  SiteText,
+  Track,
+  TrackAssetSizes,
+} from "./types";
 
 /* Every query in this file is shaped by one rule from the brief: a locked
    record's tracks and file keys must never reach the client. The enforcement
@@ -244,23 +251,40 @@ export async function getTrackAsset(
   };
 }
 
-/** Which encodings exist for each track of an unlocked record. */
-export async function getAvailableFormats(
-  slug: string,
-): Promise<Record<string, AudioFormat[]>> {
+/**
+ * Which encodings exist for each track of an unlocked record, and how large
+ * each one actually is.
+ *
+ * The sizes are read rather than estimated. The prototype derived them from
+ * duration at a fixed bitrate, which is a fair guess for MP3 and a bad one for
+ * FLAC — how well a track compresses depends on the music, and a quiet record
+ * can come in at half what a loud one does. "Keep it on your device" has to
+ * quote a number the device will really have to find room for.
+ *
+ * `wav` is filtered out. It is the archival master: never streamed, never
+ * cached, and not something a listener should be offered.
+ */
+export async function getAvailableFormats(slug: string): Promise<TrackAssetSizes> {
   if (!(await canRead(slug))) return {};
 
   const rows = (await db().sql`
-    SELECT a.track_id, a.format
+    SELECT a.track_id, a.format, a.bytes
       FROM track_asset a
       JOIN track t  ON t.id = a.track_id
       JOIN record r ON r.id = t.record_id
-     WHERE r.slug = ${slug} AND r.published AND NOT t.hidden
-  `) as unknown as Array<{ track_id: string; format: AudioFormat }>;
+     WHERE r.slug = ${slug}
+       AND r.published
+       AND NOT t.hidden
+       AND a.format IN ('flac', 'mp3')
+  `) as unknown as Array<{
+    track_id: string;
+    format: ListenFormat;
+    bytes: string | number;
+  }>;
 
-  const out: Record<string, AudioFormat[]> = {};
+  const out: TrackAssetSizes = {};
   for (const row of rows) {
-    (out[row.track_id] ??= []).push(row.format);
+    (out[row.track_id] ??= {})[row.format] = Number(row.bytes);
   }
   return out;
 }
