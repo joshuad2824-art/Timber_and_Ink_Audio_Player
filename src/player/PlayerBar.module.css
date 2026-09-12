@@ -87,13 +87,13 @@
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--sh-ink-muted);
+  color: var(--sh-ink-body);
   cursor: pointer;
   transition: color var(--sh-motion);
 }
 
 .control:hover:not(:disabled) {
-  color: var(--sh-ink-body);
+  color: var(--sh-ink-headline);
 }
 
 .control:disabled {
@@ -101,8 +101,15 @@
   cursor: default;
 }
 
-/* Engaged shuffle and repeat turn brass. Brass, not amber — they are metal,
-   and only one thing in this view is allowed to be lit. */
+/* Shuffle and repeat are the only two controls that hold a state, so they are
+   the only two that change colour: brass gold when they are on, and the same
+   cream as every other control when they are off. Gold against cream is the
+   whole signal — the listener should never have to press one to find out.
+
+   Brass, not amber. They are metal, and only one thing in this view is allowed
+   to be lit; gold that glowed would be a second sun. The engaged icon also
+   carries a heavier stroke, so the state survives a listener who cannot see
+   the difference between gold and cream. */
 .engaged {
   color: var(--sh-brass-bright);
 }

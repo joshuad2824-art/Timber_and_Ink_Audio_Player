@@ -134,7 +134,7 @@ export function PlayerBar({
             disabled={!hasAudio}
             onClick={() => engine.setShuffle(!state.shuffle)}
           >
-            <Shuffle size={18} strokeWidth={1.5} />
+            <Shuffle size={18} strokeWidth={state.shuffle ? 2 : 1.5} />
           </button>
 
           <button
@@ -185,9 +185,9 @@ export function PlayerBar({
             onClick={() => engine.cycleRepeat()}
           >
             {state.repeat === "one" ? (
-              <Repeat1 size={18} strokeWidth={1.5} />
+              <Repeat1 size={18} strokeWidth={2} />
             ) : (
-              <Repeat size={18} strokeWidth={1.5} />
+              <Repeat size={18} strokeWidth={state.repeat === "all" ? 2 : 1.5} />
             )}
           </button>
 

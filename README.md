@@ -145,15 +145,19 @@ uploading, reassembling, storing and decoding.
   play unprompted once that element has had a tap — and spends the silence
   buffering what comes next.
 - **Nothing starts or stops at full volume.** With crossfade off, a track's tail
-  ramps down inside its own last 1.6 seconds, two and a half seconds of silence
-  follow, and the next track ramps up over 1.2: a record puts a gap between
-  songs and so does this. With crossfade on they overlap instead, on the
-  4-second linear ramp. A tap on play or pause gets a third of a second either
-  way, which is the difference between a transport and a switch. The last track
-  of a record is left alone — an ending that was mastered to end is not one to
-  fade. Ramps run on their own 50ms timer against the wall clock, because a
-  quarter-second tick is audible as steps and a throttled tab has to arrive
-  anyway.
+  ramps down inside its own last 2 seconds, three seconds of silence follow, and
+  the next track ramps up over 1.6: a record puts a gap between songs and so
+  does this. With crossfade on they overlap instead, on the 4-second linear
+  ramp. A tap on play or pause gets four tenths of a second either way, which is
+  the difference between a transport and a switch. The last track of a record is
+  left alone — an ending that was mastered to end is not one to fade.
+- **No ramp starts or stops at a constant rate either.** Every single-element
+  fade follows a raised cosine, flat at both ends and steepest in the middle,
+  because a straight line is the one fade you can hear begin: the level never
+  jumps but the rate does, and the ear takes that corner as the event. Ramps run
+  on their own 25ms timer read against the wall clock — 40 steps a second is a
+  curve rather than a staircase, and a throttled background tab still has to
+  arrive at the target rather than leave a track at half volume.
 
 ## Offline
 
