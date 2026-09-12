@@ -7,7 +7,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(48px + var(--sh-safe-top)) calc(24px + var(--sh-safe-right))
+  /* `max`, not `+`. The inset and the design's own padding answer the same
+     question — how far down the content starts — so adding them stacks two
+     answers and indents a phone twice as far as the drawing ever did. Whichever
+     is larger wins: the notch decides on a phone, the design decides on a
+     screen that has none. */
+  padding: max(48px, calc(var(--sh-safe-top) + 16px)) calc(24px + var(--sh-safe-right))
     calc(48px + var(--sh-safe-bottom)) calc(24px + var(--sh-safe-left));
 }
 
@@ -27,6 +32,9 @@
 .album {
   max-width: min(var(--sh-width-album), 100%);
   margin: 0 auto;
+  /* Added rather than maxed, unlike the screens below: this one had no top
+     padding of its own to weigh the inset against — the back link sat at the
+     very top of the page — so the inset plus a little air is the whole value. */
   padding: calc(var(--sh-safe-top) + 10px) var(--sh-gutter-right)
     calc(var(--sh-player-clearance) + var(--sh-safe-bottom)) var(--sh-gutter-left);
 }
@@ -34,7 +42,7 @@
 .desk {
   max-width: min(var(--sh-width-desk), 100%);
   margin: 0 auto;
-  padding: calc(var(--sh-safe-top) + 26px) var(--sh-gutter-right)
+  padding: max(26px, calc(var(--sh-safe-top) + 12px)) var(--sh-gutter-right)
     calc(90px + var(--sh-safe-bottom)) var(--sh-gutter-left);
 }
 

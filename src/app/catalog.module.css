@@ -1,7 +1,7 @@
 .page {
   max-width: min(var(--sh-width-catalog), 100%);
   margin: 0 auto;
-  padding: calc(var(--sh-safe-top) + 56px) var(--sh-gutter-right)
+  padding: max(56px, calc(var(--sh-safe-top) + 16px)) var(--sh-gutter-right)
     calc(48px + var(--sh-safe-bottom)) var(--sh-gutter-left);
 }
 

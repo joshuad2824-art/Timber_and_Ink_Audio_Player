@@ -87,7 +87,24 @@ export const metadata: Metadata = {
      No `icons` here on purpose: icon.png and apple-icon.png sit next to this
      file and Next links them itself. Naming them here would replace that
      rather than add to it, and the one left out gets no link at all. */
-  appleWebApp: { capable: true, title: "Recordings", statusBarStyle: "black" },
+  /* `black-translucent`, not `black`.
+
+     `black` gives the web view an opaque black strip at the top and starts the
+     page underneath it, so a dark green app wore a black hat with a visible
+     seam across it. Translucent means the opposite: the view is the full height
+     of the screen, the page's own background runs all the way up behind the
+     clock and the battery, and the status bar's glyphs draw over it. There is
+     nothing to match because there is only one surface.
+
+     This is what `viewport-fit: cover` below was always for, and it is why the
+     safe-area insets are load-bearing rather than defensive: with `black` the
+     view never reached the notch and `env(safe-area-inset-top)` was zero, so
+     every screen's top padding has to clear the status bar itself now. */
+  appleWebApp: {
+    capable: true,
+    title: "Recordings",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
