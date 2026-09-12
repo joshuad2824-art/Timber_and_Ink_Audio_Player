@@ -185,3 +185,21 @@ input[type="range"] {
   background: var(--sh-paper);
   color: var(--sh-paper-ink);
 }
+
+/* The one surface, all the way to the edges of the screen.
+
+   base.css leaves the body on the design system's own page stock (#142A2B),
+   two shades off the night-shifted page the app actually draws (#0B1819).
+   Nothing ever saw the difference, because the backdrop covers the body on
+   every screen — until the status bar went translucent. Now the page runs the
+   full height of the display, and the two places the body still shows are both
+   at the top of it: the moment before the backdrop paints, and the strip iOS
+   opens under the clock when a scroll rubber-bands past the top. Two dark
+   greens meeting in a band under the status bar reads as a seam, which is the
+   exact thing translucency was for.
+
+   So the body takes the page's own colour. Not --sh-behind, which is darker
+   again and would draw the same seam a shade deeper. */
+body {
+  background: var(--sh-page);
+}
