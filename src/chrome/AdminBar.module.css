@@ -8,7 +8,9 @@
    over it. */
 .bar {
   position: relative;
-  margin-top: var(--sh-safe-top);
+  /* Written out rather than through the token: a bare substitution of an
+     env() is the one form WebKit can drop. See src/ui/tokens.css. */
+  margin-top: env(safe-area-inset-top, 0px);
   z-index: var(--sh-z-admin-bar);
   background: var(--sh-chrome);
   border-bottom: 2px solid var(--sh-brass);
