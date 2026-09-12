@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { KeyCap, PairedRule, PressedPlate } from "@/ui/devices";
 import { Switch } from "@/ui/Switch";
 import { ToastSlot, useToast } from "@/chrome/Toast";
-import { recordMeta } from "@/data/phrase";
+import { artistLine, recordMeta } from "@/data/phrase";
 import type { AdminRecord } from "@/data/admin";
 import type { SiteText } from "@/data/types";
 import styles from "./desk.module.css";
@@ -35,10 +35,18 @@ export function Desk({
     router.refresh();
   }
 
+  /* Stable across renders, and that is not a tidiness point.
+
+     This is a dependency of the site-text debounce below. Passed as a fresh
+     arrow on every render it re-armed that effect every time anything in the
+     desk re-rendered — including the toast this very callback's own save puts
+     up — so each save scheduled the next one and the tab wrote to the database
+     roughly once a second for as long as it was open. */
+  const onSaved = useCallback(() => router.refresh(), [router]);
+
   const drafts = records.filter((r) => !r.published).length;
-  const countLine =
-    `${records.length} ${records.length === 1 ? "artist" : "artists"} · ` +
-    `${drafts} in drafts`;
+  const artists = artistLine(records.map((r) => r.artistName));
+  const countLine = `${artists} · ${drafts} in drafts`;
 
   return (
     <section className={styles.page}>
@@ -125,7 +133,12 @@ export function Desk({
           </div>
         </>
       ) : (
-        <SiteTextTab initial={initialSiteText} say={say} onSaved={() => router.refresh()} />
+        <SiteTextTab
+          initial={initialSiteText}
+          artists={artists}
+          say={say}
+          onSaved={onSaved}
+        />
       )}
 
       <ToastSlot message={toast} />
@@ -273,16 +286,30 @@ function RecordCard({
 
 function SiteTextTab({
   initial,
+  artists,
   say,
   onSaved,
 }: {
   initial: SiteText;
+  /** The live count, for the preview — the same string the catalog will draw. */
+  artists: string;
   say: (m: string) => void;
   onSaved: () => void;
 }) {
   const [text, setText] = useState(initial);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const first = useRef(true);
+
+  /* The callbacks, reachable from the timer without being watched by it.
+
+     What the debounce is waiting for is the typing to stop, and only `text`
+     says anything about that. A callback in the dependency array means every
+     re-render of the desk restarts the wait — and, when the callback is the
+     one the save itself triggers, means the save schedules its own successor
+     and the loop never closes. A ref is read at the moment the timer fires, so
+     it is always current without ever being a reason to re-arm. */
+  const latest = useRef({ say, onSaved });
+  latest.current = { say, onSaved };
 
   /* "Saved as you type." is a promise, so the save is debounced rather than
      tied to a button — but not on the first render, which would write the
@@ -294,19 +321,33 @@ function SiteTextTab({
     }
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
-      await fetch("/api/admin/site-text", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(text),
-      });
-      say("Saved.");
-      onSaved();
+      try {
+        const res = await fetch("/api/admin/site-text", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(text),
+        });
+        if (!res.ok) {
+          // A promise of "saved as you type" that quietly did not is worse
+          // than no promise. The words on screen are still the owner's; only
+          // the database is behind.
+          latest.current.say("That didn't save. It's still here — try again.");
+          return;
+        }
+      } catch {
+        latest.current.say("I couldn't reach the server. Nothing saved yet.");
+        return;
+      }
+      latest.current.say("Saved.");
+      latest.current.onSaved();
     }, 700);
 
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [text, say, onSaved]);
+    // `say` and `onSaved` are deliberately not dependencies — see `latest`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
 
   const set = (patch: Partial<SiteText>) => setText((t) => ({ ...t, ...patch }));
 
@@ -363,7 +404,7 @@ function SiteTextTab({
       <div className={styles.readsAs}>
         <div className={styles.fieldLabel}>Reads as:</div>
         <div className={`${type_.metaSmall}`} style={{ marginTop: 8 }}>
-          3 artists · {text.footer}
+          {artists} · {text.footer}
         </div>
         <div className={styles.savedNote} style={{ marginTop: 14 }}>
           Saved as you type.

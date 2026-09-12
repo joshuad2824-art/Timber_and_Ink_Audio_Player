@@ -7,7 +7,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
+  padding: calc(48px + var(--sh-safe-top)) calc(24px + var(--sh-safe-right))
+    calc(48px + var(--sh-safe-bottom)) calc(24px + var(--sh-safe-left));
 }
 
 .column {
@@ -21,18 +22,20 @@
 }
 
 /* The album screen reserves room for the fixed player bar, and honours the
-   iOS home indicator on top of that. */
+   iOS home indicator on top of that — and the notch above it, without which
+   the back link and "Lock it back" sit behind the status bar in standalone. */
 .album {
   max-width: min(var(--sh-width-album), 100%);
   margin: 0 auto;
-  padding: 0 var(--sh-gutter) var(--sh-player-clearance);
-  padding-bottom: calc(var(--sh-player-clearance) + env(safe-area-inset-bottom));
+  padding: calc(var(--sh-safe-top) + 10px) var(--sh-gutter-right)
+    calc(var(--sh-player-clearance) + var(--sh-safe-bottom)) var(--sh-gutter-left);
 }
 
 .desk {
   max-width: min(var(--sh-width-desk), 100%);
   margin: 0 auto;
-  padding: 26px var(--sh-gutter) 90px;
+  padding: calc(var(--sh-safe-top) + 26px) var(--sh-gutter-right)
+    calc(90px + var(--sh-safe-bottom)) var(--sh-gutter-left);
 }
 
 /* A back link. Sentence case, mono, 44px of target. Block-level with a

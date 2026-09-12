@@ -249,13 +249,20 @@ export async function getTrackAsset(
 ): Promise<{ blobKey: string; bytes: number; mimeType: string } | null> {
   if (!(await canRead(slug))) return null;
 
+  /* The owner hears a draft; nobody else reaches one at all. This clause used
+     to be a bare `r.published`, which made a draft unplayable to the one
+     person allowed to open it — getUnlockedRecord let them onto the album
+     screen and then every row on it answered 404. Checking your own work
+     before publishing is the entire purpose of a draft. */
+  const admin = await isAdmin();
+
   const rows = (await db().sql`
     SELECT a.blob_key, a.bytes, a.mime_type
       FROM track_asset a
       JOIN track t  ON t.id = a.track_id
       JOIN record r ON r.id = t.record_id
      WHERE r.slug = ${slug}
-       AND r.published
+       AND (r.published OR ${admin})
        AND t.id = ${trackId}
        AND NOT t.hidden
        AND a.format = ${format}
@@ -288,13 +295,18 @@ export async function getTrackAsset(
 export async function getAvailableFormats(slug: string): Promise<TrackAssetSizes> {
   if (!(await canRead(slug))) return {};
 
+  // Drafts included, for the owner only — see getTrackAsset. Without this a
+  // draft's every track renders as silent and the screen says the files are
+  // not up yet, on a record whose files are up.
+  const admin = await isAdmin();
+
   const rows = (await db().sql`
     SELECT a.track_id, a.format, a.bytes
       FROM track_asset a
       JOIN track t  ON t.id = a.track_id
       JOIN record r ON r.id = t.record_id
      WHERE r.slug = ${slug}
-       AND r.published
+       AND (r.published OR ${admin})
        AND NOT t.hidden
        AND a.format IN ('flac', 'mp3')
   `) as unknown as Array<{
@@ -323,10 +335,16 @@ export async function getCoverAsset(
 ): Promise<{ blobKey: string; mimeType: string } | null> {
   if (!(await canRead(slug))) return null;
 
+  // Behind the same draft rule as the tracks, so a record is one thing or the
+  // other rather than a locked shelf with its sleeve still on show.
+  const admin = await isAdmin();
+
   const rows = (await db().sql`
     SELECT cover_key, cover_mime
       FROM record
-     WHERE slug = ${slug} AND cover_key IS NOT NULL
+     WHERE slug = ${slug}
+       AND (published OR ${admin})
+       AND cover_key IS NOT NULL
      LIMIT 1
   `) as unknown as Array<{ cover_key: string; cover_mime: string }>;
 
