@@ -16,6 +16,19 @@ export type PlayerSnapshot = {
 
 const TICK_MS = 250;
 const CROSSFADE_SECONDS = 4;
+
+/* A quarter-second tick is far too coarse for a volume ramp — six steps down a
+   fade-out is audible as six steps — so ramps get their own faster timer. */
+const RAMP_MS = 50;
+/** The breath between two tracks: real silence, so they never run together. */
+const GAP_SECONDS = 2.5;
+/** The tail of a track, ramped down inside its own last seconds. */
+const FADE_OUT_SECONDS = 1.6;
+/** The head of the next one, ramped up once the silence is over. */
+const FADE_IN_SECONDS = 1.2;
+/** Short enough that a tap still feels immediate, long enough to kill the click. */
+const CUE_FADE_SECONDS = 0.35;
+
 const VOLUME_KEY = "shadowharbor.volume";
 const CROSSFADE_KEY = "shadowharbor.crossfade";
 
@@ -27,6 +40,14 @@ const CROSSFADE_KEY = "shadowharbor.crossfade";
  * gapless playback would hiccup while the next track buffers. The two swap
  * roles on every advance: whichever is audible is `live`, the other is `idle`
  * and is where the next track gets preloaded.
+ *
+ * There are two ways across the seam between tracks and the Crossfade switch
+ * picks one. Off, which is the default, the outgoing track ramps down through
+ * its own last seconds, two and a half seconds of silence follow, and the next
+ * one ramps up — a record puts a gap between songs and so does this. On, they
+ * overlap on a linear ramp and there is no silence at all. Either way nothing
+ * starts or stops at full volume, which is the whole point: a cut is the one
+ * transition that sounds like a machine.
  *
  * Deliberately not a React hook. Playback has to survive re-renders untouched —
  * a state change mid-crossfade must not restart a ramp or reset a volume — so
@@ -64,6 +85,25 @@ export class PlayerEngine {
   private fade: { from: 0 | 1; to: 0 | 1; startedAt: number; toIndex: number } | null =
     null;
 
+  /** Non-null only while a single element's volume is actually ramping. */
+  private ramp: {
+    el: HTMLAudioElement;
+    from: number;
+    to: number;
+    startedAt: number;
+    ms: number;
+    /** What the ramp was on its way to do — pause the element, usually. */
+    done?: () => void;
+  } | null = null;
+
+  private rampTimer: ReturnType<typeof setInterval> | null = null;
+
+  /** Set only while the silence between two tracks is running. */
+  private gapTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** True once the current track's tail ramp has been started, so it is started once. */
+  private fadingOut = false;
+
   /**
    * Which track index each element currently holds a source for.
    *
@@ -100,10 +140,14 @@ export class PlayerEngine {
          rides along automatically; setting it would force a CORS code path for
          a request that never crosses an origin. */
       el.addEventListener("ended", () => this.onEnded(el));
-      el.addEventListener("waiting", () => this.setStalled(true));
-      el.addEventListener("playing", () => this.setStalled(false));
-      el.addEventListener("canplay", () => this.setStalled(false));
-      el.addEventListener("error", () => this.setStalled(true));
+      /* Only the audible element can stall. The idle one is where the next
+         track preloads and where a retired source gets dropped, and the drop
+         itself fires `error` — which, taken at face value, left the bar
+         reading "Buffering" over a track that was playing perfectly well. */
+      el.addEventListener("waiting", () => this.stallFrom(el, true));
+      el.addEventListener("playing", () => this.stallFrom(el, false));
+      el.addEventListener("canplay", () => this.stallFrom(el, false));
+      el.addEventListener("error", () => this.stallFrom(el, true));
     }
 
     this.pair = pair;
@@ -117,8 +161,14 @@ export class PlayerEngine {
     this.slug = slug;
     this.tracks = tracks;
     this.format = format;
-    // Anything already on an element belongs to the old record or encoding.
-    if (changed) this.loaded = [null, null];
+    // Anything already on an element, or on its way to one, belongs to the old
+    // record or encoding.
+    if (changed) {
+      this.cancelGap();
+      this.cancelFade();
+      this.cancelRamp();
+      this.loaded = [null, null];
+    }
   }
 
   subscribe(fn: (s: PlayerSnapshot) => void): () => void {
@@ -164,6 +214,7 @@ export class PlayerEngine {
     if (i < 0 || i >= this.tracks.length) return;
 
     this.cancelFade();
+    this.cancelGap();
 
     const restarting = i === this.index;
     this.index = i;
@@ -188,26 +239,45 @@ export class PlayerEngine {
   }
 
   async play() {
+    // Pressing play during the silence means "now", not "in two seconds" — so
+    // the gap ends here, and the track gets the fade it was going to get.
+    const betweenTracks = this.gapTimer !== null;
+    this.cancelGap();
+
     const el = this.live();
     if (this.loaded[this.liveIndex] !== this.index) {
       el.src = this.srcFor(this.index);
       this.loaded[this.liveIndex] = this.index;
       el.currentTime = this.position;
     }
-    await this.start();
+    await this.start(betweenTracks ? FADE_IN_SECONDS : CUE_FADE_SECONDS);
   }
 
-  private async start() {
+  /**
+   * Start the live element, ramping up rather than arriving at full volume.
+   *
+   * Even a tap on a track row gets a ramp. A third of a second is short enough
+   * that the tap still feels answered and long enough that the first sample is
+   * not a click; a track arriving out of the silence gets the longer one.
+   */
+  private async start(fadeSeconds = CUE_FADE_SECONDS) {
     const el = this.live();
-    el.volume = this.volume;
+    // This element is ours now, including whatever a ramp in flight was going
+    // to do with it — a pause that is about to be overruled by playing.
+    this.cancelRamp(false);
+    this.fadingOut = false;
+    el.volume = 0;
     try {
       await el.play();
       this.playing = true;
       this.setStalled(false);
       this.startTicking();
+      this.rampTo(el, this.volume, fadeSeconds * 1000);
     } catch {
       // Autoplay refusal, or a track with no file behind it. Either way the
-      // transport should read as stopped rather than pretend to be running.
+      // transport should read as stopped rather than pretend to be running,
+      // and the element is left at the real level for the next attempt.
+      el.volume = this.volume;
       this.playing = false;
       this.setStalled(true);
     }
@@ -217,9 +287,29 @@ export class PlayerEngine {
 
   pause() {
     this.cancelFade();
-    this.live().pause();
+
+    if (this.gapTimer !== null) {
+      // Caught in the silence. The next track is already cued on the live
+      // element, so stopping here leaves it ready to start rather than
+      // snapping back to the one that just finished.
+      this.cancelGap();
+      this.live().pause();
+      this.playing = false;
+      this.stopTicking();
+      this.emit();
+      this.publishMediaSession();
+      return;
+    }
+
+    const el = this.live();
+    // The transport reads as stopped at once, because the tap has to be
+    // answered; the sound gets the same short ramp down that play gets up.
     this.playing = false;
     this.stopTicking();
+    this.rampTo(el, 0, CUE_FADE_SECONDS * 1000, () => {
+      el.pause();
+      el.volume = this.volume;
+    });
     this.emit();
     this.publishMediaSession();
   }
@@ -248,9 +338,14 @@ export class PlayerEngine {
     const duration = this.tracks[this.index]?.seconds ?? 0;
     const clamped = Math.max(0, Math.min(duration, seconds));
 
-    // A seek invalidates any ramp in flight: the listener has moved away from
-    // the point the fade was timed against.
+    /* A seek invalidates anything in flight: the listener has moved away from
+       the point the fade was timed against, and touching the bar during the
+       silence means the same as pressing play — start the cued track, here. */
+    const betweenTracks = this.gapTimer !== null;
+    this.cancelGap();
     this.cancelFade();
+    this.cancelRamp();
+    this.fadingOut = false;
 
     this.position = clamped;
     const el = this.live();
@@ -261,6 +356,15 @@ export class PlayerEngine {
         /* not seekable yet; the tick will catch up once metadata lands */
       }
     }
+
+    if (betweenTracks) {
+      void this.start(FADE_IN_SECONDS);
+      return;
+    }
+
+    // Seeking backwards out of a tail ramp has to undo it, or the rest of the
+    // track plays at whatever level the ramp had reached.
+    if (!this.fade) el.volume = this.volume;
     this.emit();
   }
 
@@ -271,6 +375,11 @@ export class PlayerEngine {
     this.emit();
   }
 
+  /**
+   * One button, three states, in that order: the whole album, then the one
+   * song, then off again. The bar swaps to the `repeat-1` glyph on the second
+   * press, so the three states are told apart without a label.
+   */
   cycleRepeat() {
     this.repeat = this.repeat === "off" ? "all" : this.repeat === "all" ? "one" : "off";
     this.emit();
@@ -278,16 +387,32 @@ export class PlayerEngine {
 
   setVolume(v: number) {
     this.volume = Math.max(0, Math.min(1, v));
-    // Mid-fade the ramp owns both elements' volumes; writing here would jump
-    // the level. The next tick applies the new target to the ramp instead.
-    if (!this.fade) this.live().volume = this.volume;
+    // Mid-ramp the ramp owns the element's volume; writing here would jump the
+    // level. A ramp on its way up gets the new target instead, so a nudge of
+    // the slider during a fade-in lands where the listener put it. A fade-out
+    // is on its way to silence and stays on its way to silence.
+    if (this.ramp) {
+      if (this.ramp.to > 0) this.ramp.to = this.volume;
+    } else if (!this.fade) {
+      this.live().volume = this.volume;
+    }
     this.persist(VOLUME_KEY, String(this.volume));
     this.emit();
   }
 
   setCrossfade(on: boolean) {
     this.crossfadeEnabled = on;
-    if (!on) this.cancelFade();
+    if (on) {
+      // A tail already on its way down belongs to the transition that was just
+      // switched off. Put the level back and let the crossfade have the seam.
+      if (this.fadingOut) {
+        this.cancelRamp();
+        this.fadingOut = false;
+        if (!this.fade) this.live().volume = this.volume;
+      }
+    } else {
+      this.cancelFade();
+    }
     this.persist(CROSSFADE_KEY, on ? "1" : "0");
     this.emit();
   }
@@ -306,11 +431,15 @@ export class PlayerEngine {
   }
 
   private tick() {
+    // The silence between two tracks runs on its own timer, with the live
+    // element cued at zero waiting for it. Nothing here applies.
+    if (this.gapTimer !== null) return;
+
     const track = this.tracks[this.index];
     if (!track) return;
 
     const el = this.live();
-    const duration = track.seconds || el.duration || 0;
+    const duration = this.liveDuration(track);
     this.position = el.currentTime;
 
     if (this.fade) {
@@ -318,14 +447,24 @@ export class PlayerEngine {
       return;
     }
 
-    const cf = CROSSFADE_SECONDS;
-    if (
-      this.crossfadeEnabled &&
-      this.repeat !== "one" &&
-      duration > cf &&
-      duration - this.position <= cf
+    const remaining = duration - this.position;
+
+    if (this.crossfadeEnabled && this.repeat !== "one") {
+      const cf = CROSSFADE_SECONDS;
+      if (duration > cf && remaining <= cf) void this.beginFade();
+    } else if (
+      !this.fadingOut &&
+      // A track with no room for two ramps gets neither.
+      duration > FADE_OUT_SECONDS * 2 &&
+      remaining <= FADE_OUT_SECONDS &&
+      this.advanceTarget() >= 0
     ) {
-      void this.beginFade();
+      /* The tail, ramped down inside the track's own last seconds and timed to
+         reach silence exactly as the file ends — so what follows reads as the
+         gap between two songs rather than a cut. The last track of a record is
+         left alone: an ending that was mastered to end is not one to fade. */
+      this.fadingOut = true;
+      this.rampTo(el, 0, Math.max(200, remaining * 1000));
     }
 
     this.emit();
@@ -336,6 +475,10 @@ export class PlayerEngine {
   private async beginFade() {
     const to = this.nextIndex();
     if (to < 0) return;
+
+    // The crossfade owns both volumes from here; nothing else may be moving.
+    this.cancelRamp();
+    this.fadingOut = false;
 
     const idle = (1 - this.liveIndex) as 0 | 1;
     const el = this.els()[idle];
@@ -379,8 +522,7 @@ export class PlayerEngine {
 
     const old = this.els()[from];
     old.pause();
-    old.src = "";
-    this.loaded[from] = null;
+    this.releaseSource(old, from);
 
     this.liveIndex = to;
     this.index = toIndex;
@@ -394,11 +536,157 @@ export class PlayerEngine {
   private cancelFade() {
     if (!this.fade) return;
     const { to } = this.fade;
-    this.els()[to].pause();
-    this.els()[to].src = "";
-    this.loaded[to] = null;
+    const incoming = this.els()[to];
+    incoming.pause();
+    this.releaseSource(incoming, to);
     this.fade = null;
     this.live().volume = this.volume;
+  }
+
+  // ── the gap between tracks ────────────────────────────────────────────────
+
+  /**
+   * Two and a half seconds of silence, then the next track fades in.
+   *
+   * The handover happens at the start of the silence rather than the end of it:
+   * the next track becomes the current one immediately, cued at zero with its
+   * volume at zero and its file already loading. So the bar says what is
+   * coming, the lock screen agrees, pressing pause stops on the cued track
+   * instead of snapping back to the finished one, and the two and a half
+   * seconds are spent buffering, which is most of why the first second of the
+   * next track does not stall.
+   *
+   * It stays on the element the listener started, not the idle one. iOS only
+   * lets an element play unprompted once that element has had a tap, so handing
+   * the advance to the other one is how a record quietly stops at the end of
+   * track one on an iPhone. The pair is still there for crossfade, which has to
+   * overlap and so has no choice.
+   */
+  private beginGap(to: number) {
+    this.cancelRamp();
+    this.fadingOut = false;
+
+    const el = this.live();
+    el.pause();
+    el.volume = 0;
+
+    // Already loaded when repeat-one comes back round to the same file.
+    if (this.loaded[this.liveIndex] !== to) {
+      // Against the `none` the pair is built with: the silence is only worth
+      // anything if the next track spends it arriving.
+      el.preload = "auto";
+      el.src = this.srcFor(to);
+      this.loaded[this.liveIndex] = to;
+    }
+    try {
+      el.currentTime = 0;
+    } catch {
+      /* no metadata yet; it is at zero anyway, and endGap asks again */
+    }
+
+    this.index = to;
+    this.position = 0;
+    this.playing = true; // between tracks is still running, just not sounding
+    this.gapTimer = setTimeout(() => void this.endGap(), GAP_SECONDS * 1000);
+
+    this.emit();
+    this.publishMediaSession();
+  }
+
+  private async endGap() {
+    this.gapTimer = null;
+    try {
+      this.live().currentTime = this.position;
+    } catch {
+      /* not seekable yet; start() plays from wherever it is */
+    }
+    await this.start(FADE_IN_SECONDS);
+  }
+
+  private cancelGap() {
+    if (this.gapTimer === null) return;
+    clearTimeout(this.gapTimer);
+    this.gapTimer = null;
+  }
+
+  // ── volume ramps ──────────────────────────────────────────────────────────
+
+  /**
+   * Walk one element's volume to a target over `ms`.
+   *
+   * Timed against the wall clock rather than counted in steps, so a background
+   * tab that throttles the timer still arrives, just coarsely. A ramp that
+   * stopped halfway would leave a track playing at half volume, or silent.
+   */
+  private rampTo(el: HTMLAudioElement, to: number, ms: number, done?: () => void) {
+    this.cancelRamp(false);
+
+    const from = el.volume;
+    const target = Math.max(0, Math.min(1, to));
+    if (ms <= 0 || Math.abs(target - from) < 0.005) {
+      el.volume = target;
+      done?.();
+      return;
+    }
+
+    this.ramp = { el, from, to: target, startedAt: performance.now(), ms, done };
+    this.rampTimer = setInterval(() => this.advanceRamp(), RAMP_MS);
+  }
+
+  private advanceRamp() {
+    const r = this.ramp;
+    if (!r) {
+      this.stopRampTimer();
+      return;
+    }
+
+    const k = Math.min(1, (performance.now() - r.startedAt) / r.ms);
+    r.el.volume = Math.max(0, Math.min(1, r.from + (r.to - r.from) * k));
+    if (k < 1) return;
+
+    this.ramp = null;
+    this.stopRampTimer();
+    r.done?.();
+  }
+
+  /**
+   * Drop a ramp in flight, leaving the volume where it reached.
+   *
+   * `settle` still runs what the ramp was on its way to do. A fade-out that
+   * ends in a pause has to pause even when something interrupts it, or a seek
+   * mid-ramp leaves an element playing that the listener stopped. Only `start`,
+   * which is taking the element over to play it, drops that.
+   */
+  private cancelRamp(settle = true) {
+    const r = this.ramp;
+    if (!r) return;
+    this.ramp = null;
+    this.stopRampTimer();
+    if (settle) r.done?.();
+  }
+
+  private stopRampTimer() {
+    if (!this.rampTimer) return;
+    clearInterval(this.rampTimer);
+    this.rampTimer = null;
+  }
+
+  /**
+   * Let go of an element's file.
+   *
+   * `removeAttribute`, not `src = ""` — an empty string resolves against the
+   * page, so the element goes off to load an HTML document as audio and reports
+   * the obvious error.
+   */
+  private releaseSource(el: HTMLAudioElement, slot: 0 | 1) {
+    el.removeAttribute("src");
+    el.preload = "none";
+    this.loaded[slot] = null;
+    try {
+      el.load();
+    } catch {
+      /* nothing to reset */
+    }
   }
 
   // ── track ends ────────────────────────────────────────────────────────────
@@ -407,24 +695,63 @@ export class PlayerEngine {
     // During a fade the outgoing element ends on its own; that is the ramp
     // completing, not the record advancing.
     if (this.fade && el === this.els()[this.fade.from]) return;
+    // Likewise an element that is no longer the audible one. A crossfade that
+    // has already swapped roles leaves the retired track to finish in silence,
+    // and reading that as an advance skips a song.
+    if (el !== this.live()) return;
+    // A gap is already counting down towards the next track.
+    if (this.gapTimer !== null) return;
 
-    if (this.repeat === "one") {
-      el.currentTime = 0;
-      void el.play();
-      this.position = 0;
-      this.emit();
-      return;
-    }
-
-    const i = this.nextIndex();
-    if (i < 0) {
+    const to = this.advanceTarget();
+    if (to < 0) {
+      // The record is over. Put the level back in case a tail ramp took it
+      // down on the way here — repeat-all switched off mid-fade, say — so the
+      // next press of play is not answered with silence.
+      el.volume = this.volume;
       this.playing = false;
       this.position = this.tracks[this.index]?.seconds ?? 0;
       this.stopTicking();
       this.emit();
+      this.publishMediaSession();
       return;
     }
-    void this.playTrack(i);
+
+    /* Crossfade on means the tracks overlap and there is no silence to sit in.
+       Arriving here with it on means the ramp never got going — a track shorter
+       than the window, or a next file that would not start — so advance plainly
+       rather than inventing a pause the listener switched off. */
+    if (this.crossfadeEnabled && this.repeat !== "one") {
+      void this.playTrack(to);
+      return;
+    }
+
+    this.beginGap(to);
+  }
+
+  /**
+   * Where the record goes when this track ends, or -1 if it stops there.
+   *
+   * Repeat-one is an advance to the same index rather than a special case that
+   * restarts the element, so the one song loops through the same ramp down,
+   * silence and ramp up as any other pair of tracks.
+   */
+  private advanceTarget(): number {
+    if (this.repeat === "one") return this.index;
+    return this.nextIndex();
+  }
+
+  /**
+   * How long the playing file actually is.
+   *
+   * The element's own duration wherever it has one, because that is what
+   * decides when `ended` fires: a ramp timed against a stored length that
+   * disagrees reaches silence early, or gets cut off partway down. The stored
+   * length stands in until metadata lands, and stays what the bar displays.
+   */
+  private liveDuration(track: Track): number {
+    const d = this.live().duration;
+    if (Number.isFinite(d) && d > 0) return d;
+    return track.seconds || 0;
   }
 
   private nextIndex(): number {
@@ -485,6 +812,11 @@ export class PlayerEngine {
     }
   }
 
+  private stallFrom(el: HTMLAudioElement, v: boolean) {
+    if (el !== this.live()) return;
+    this.setStalled(v);
+  }
+
   private setStalled(v: boolean) {
     if (this.stalled === v) return;
     this.stalled = v;
@@ -493,6 +825,8 @@ export class PlayerEngine {
 
   destroy() {
     this.stopTicking();
+    this.cancelGap();
+    this.cancelRamp(false);
     // Only what was actually built. Reaching through the accessor here would
     // create two elements for the sole purpose of tearing them down.
     for (const el of this.pair ?? []) {

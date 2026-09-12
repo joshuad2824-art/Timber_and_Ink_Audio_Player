@@ -91,6 +91,17 @@ The prototype checks phrases in the browser and prints them on screen. In produc
   photo was taken in would otherwise be.
 - **Like counts are real but not social.** Persisted server-side, idempotent per
   device. Nobody is shown who else liked anything.
+- **Tracks are spaced, not butted together.** With the Crossfade switch off —
+  which is the default — a track's tail ramps down inside its own last 1.6
+  seconds, two and a half seconds of silence follow, and the next one ramps up
+  over 1.2. With it on they overlap on the linear ramp instead and there is no
+  silence. Nothing starts or stops at full volume either way, a tap on the
+  transport included; the last track of a record is the one exception, because
+  an ending that was mastered to end is not one to fade. Repeat-one loops
+  through the same silence rather than snapping back to zero.
+- **The repeat button has three states, in this order**: off, the whole album,
+  this song, off again. The bar swaps to the `repeat-1` glyph on the second
+  press, which is the only thing that distinguishes the last two.
 
 ## Open questions for the owner
 
