@@ -76,8 +76,8 @@ Milestone 5 of six, complete apart from the download links. See
       and WAV upload with in-browser FLAC/MP3 encoding.
 - [x] **5 — Offline.** Service worker, manifest, home-screen icons, the
       "Keep it on your device" panel, a bookmark on every track row, and a
-      count read from the real Cache API. Still to come: the "Download the
-      files" rows.
+      count read from the real Cache API. Cover art upload too. Still to come:
+      the "Download the files" rows.
 - [ ] **6 — Hardening.** Rate limits, audit logging, a keyboard pass, Lighthouse
       on a throttled phone.
 
@@ -180,6 +180,44 @@ tracks are really there.
   page's markup at install and keeps whatever it asks for, so there is no build
   step to keep in step.
 
+## Cover art
+
+The owner taps the mount in the record editor and gets their phone's own
+picker — Photo Library, Take Photo, Choose File. It is a `<label>` wrapping
+`<input type="file" accept="image/*">`, which is what makes the whole 200px
+square the tap target; a drop still works on a desktop, where a drop is the
+natural gesture and a tap is not.
+
+- **The picture is scaled in the browser, for the same reason the audio is.**
+  A phone writes eight megabytes of 3024×4032 and a Netlify function's request
+  body caps at a few, so the upload route would refuse the original outright.
+  The desk re-encodes to fit a 1400px long edge — the mat shows 420px — which
+  lands at a few hundred kilobytes and makes the upload a single PUT rather
+  than the stitched-together affair the audio path has to be.
+- **EXIF orientation is honoured, and then everything else is dropped.**
+  `createImageBitmap(file, { imageOrientation: "from-image" })` rather than
+  drawing raw pixels, because a phone held sideways writes landscape pixels and
+  a tag saying "rotate this" — ignore it and the sleeve is on its side. What
+  comes out the other end has no EXIF at all, which matters for a second
+  reason: a camera writes the place and the minute into every photo, and a
+  record sleeve is not where the owner should publish where they live.
+- **A new storage key on every upload.** Blobs is eventually consistent, and
+  replacing a cover is the commonest thing an owner does — writing to the same
+  key would sometimes go on serving the picture they had just decided against.
+  The row is repointed and the old blob swept after, never before.
+- **The URL carries the upload time.** `/api/records/<slug>/cover?v=…`, cached
+  hard and privately. A sleeve is looked at on every visit and re-sending it
+  each time would be absurd; the version is what makes caching it safe.
+- **Behind the same read check as the tracks.** The design puts cover art on
+  the album screen only, never the catalog, so there is nothing to gain by
+  making it public and a sleeve to give away by doing it. The gate carries no
+  cover URL at all — whether art exists is not something a locked record should
+  answer.
+- **The declared type is checked against the bytes.** The route stores the
+  content type and serves it straight back, so a JPEG uploaded as a PNG would
+  have the site telling a browser something untrue about what it is handing
+  over. Eight bytes of header settle it.
+
 ## Environment
 
 | Variable | Where | What |
@@ -188,7 +226,7 @@ tracks are really there.
 | `NETLIFY_DATABASE_URL` | Netlify (automatic) | Provisioned by Netlify DB; nothing to configure. |
 | `DATABASE_URL` | local only | Points at a local Postgres for testing. |
 | `SHADOW_HARBOR_SETUP_TOKEN` | Netlify | Lets the owner claim the desk once, on a site that has never had one. Set it yourself; see below. |
-| `SHADOW_HARBOR_LOCAL_AUDIO` | local only | A directory to use instead of Netlify Blobs, so the audio path can be tested with real files. |
+| `SHADOW_HARBOR_LOCAL_AUDIO` | local only | A directory to use instead of Netlify Blobs, so the media path can be tested with real files. It holds one subdirectory per store — `shadow-harbor-audio/` and `shadow-harbor-covers/`. |
 
 ## If nothing will sign in
 
@@ -247,8 +285,9 @@ SHADOW_HARBOR_SECRET=any-32-plus-character-string-for-dev npm run dev
   published phrase protects nothing. Treat the three seeded records as open to
   anyone who reads the repo, and reset every phrase from the desk (milestone 4)
   before real music goes behind one.
-- **Cover art.** Audio uploads work; the editor's cover drop target does not
-  yet. Nothing was supplied with the handoff either way.
+- **Real cover art and real music.** Both upload paths work now; nothing was
+  supplied with the handoff, so there is still nothing to look at or listen to
+  until the owner puts it there.
 - **The download links.** `Download the files` — the MP3 format chip, the
   whole-album row and the per-track rows — is the last piece of milestone 5.
   The sizes are ready for it: `track_asset.bytes` is real, and

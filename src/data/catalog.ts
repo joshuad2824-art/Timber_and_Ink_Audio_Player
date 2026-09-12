@@ -33,6 +33,7 @@ type RecordRow = {
   published: boolean;
   listed: boolean;
   cover_key: string | null;
+  cover_updated_at: string | Date | null;
   track_count: string | number;
   total_seconds: string | number | null;
 };
@@ -47,8 +48,28 @@ function toSummary(row: RecordRow): RecordSummary {
     totalSeconds: Number(row.total_seconds ?? 0),
     published: row.published,
     listed: row.listed,
-    coverUrl: undefined,
+    coverUrl: coverUrl(row.slug, row.cover_key, row.cover_updated_at),
   };
+}
+
+/**
+ * Where a record's cover is fetched from, or undefined if there isn't one.
+ *
+ * A stable path with the upload time hung off it. The route is behind the same
+ * read check as the tracks, so the response is cached hard — a cover is looked
+ * at on every visit and re-sending it each time would be absurd — and the
+ * version is what lets that be safe: replace the art and this changes, leave it
+ * alone and nothing re-downloads. The storage key itself never appears; it is
+ * not the listener's business where the bytes sit.
+ */
+function coverUrl(
+  slug: string,
+  key: string | null,
+  updatedAt: string | Date | null,
+): string | undefined {
+  if (!key || !updatedAt) return undefined;
+  const version = new Date(updatedAt).getTime();
+  return `/api/records/${slug}/cover?v=${Number.isFinite(version) ? version : 0}`;
 }
 
 /**
@@ -65,7 +86,7 @@ export async function listCatalog(): Promise<RecordSummary[]> {
 
   const rows = (await db().sql`
     SELECT r.slug, r.artist_name, r.album_title, r.year, r.intro,
-           r.published, r.listed, r.cover_key,
+           r.published, r.listed, r.cover_key, r.cover_updated_at,
            COUNT(t.id) FILTER (WHERE NOT t.hidden) AS track_count,
            COALESCE(SUM(t.seconds) FILTER (WHERE NOT t.hidden), 0) AS total_seconds
       FROM record r
@@ -143,7 +164,7 @@ export async function getUnlockedRecord(slug: string): Promise<RecordDetail | nu
 
   const rows = (await db().sql`
     SELECT r.slug, r.artist_name, r.album_title, r.year, r.intro,
-           r.published, r.listed, r.cover_key,
+           r.published, r.listed, r.cover_key, r.cover_updated_at,
            COUNT(t.id) FILTER (WHERE NOT t.hidden) AS track_count,
            COALESCE(SUM(t.seconds) FILTER (WHERE NOT t.hidden), 0) AS total_seconds
       FROM record r
@@ -287,4 +308,30 @@ export async function getAvailableFormats(slug: string): Promise<TrackAssetSizes
     (out[row.track_id] ??= {})[row.format] = Number(row.bytes);
   }
   return out;
+}
+
+/**
+ * Resolve a record's stored cover, for the cover route.
+ *
+ * Behind the same read check as the tracks. Cover art is part of the record,
+ * and the catalog does not show it — the design puts it on the album screen
+ * only — so there is nothing to gain by making it public and a sleeve to give
+ * away by doing it.
+ */
+export async function getCoverAsset(
+  slug: string,
+): Promise<{ blobKey: string; mimeType: string } | null> {
+  if (!(await canRead(slug))) return null;
+
+  const rows = (await db().sql`
+    SELECT cover_key, cover_mime
+      FROM record
+     WHERE slug = ${slug} AND cover_key IS NOT NULL
+     LIMIT 1
+  `) as unknown as Array<{ cover_key: string; cover_mime: string }>;
+
+  const row = rows[0];
+  if (!row) return null;
+
+  return { blobKey: row.cover_key, mimeType: row.cover_mime };
 }

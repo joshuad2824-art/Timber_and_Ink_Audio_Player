@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, Eye, EyeOff, Trash2 } from "lucide-react";
 import { PressedPlate } from "@/ui/devices";
 import { Switch } from "@/ui/Switch";
 import { Upload } from "@/desk/Upload";
+import { CoverPicker } from "@/desk/CoverPicker";
 import { ToastSlot, useToast } from "@/chrome/Toast";
 import { formatDuration } from "@/data/phrase";
 import type { AdminRecord, AdminTrack } from "@/data/admin";
@@ -99,11 +100,12 @@ export function Editor({ record: initial }: { record: FullRecord }) {
       <div className={styles.rule} />
 
       <div className={styles.standingRow}>
-        <div className={styles.coverDrop}>
-          {/* Cover upload lands with audio upload, in the next pass. */}
-          <span className={type_.metaSmall}>Cover art</span>
-          <span className={styles.coverHint}>Coming with uploads</span>
-        </div>
+        <CoverPicker
+          recordId={record.id}
+          coverUrl={record.coverUrl}
+          onChange={reload}
+          say={say}
+        />
 
         <div className={styles.standing}>
           <div className={desk.fieldLabel}>Where it stands</div>

@@ -44,6 +44,7 @@ export function Album({
 
         <div className={album.cover}>
           <PhotoMat
+            src={record.coverUrl}
             alt={`Cover art for ${record.albumTitle}`}
             caption={
               <div className={album.matCaption}>

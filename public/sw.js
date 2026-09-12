@@ -25,7 +25,13 @@ const AUDIO = "shadow-harbor-audio";
 const SHELL = "shadow-harbor-shell-v1";
 const PAGES = "shadow-harbor-pages-v1";
 
-const KEEP = new Set([AUDIO, SHELL, PAGES]);
+/* Cover art. Unversioned like the audio, and for a softer version of the same
+   reason: a sleeve is a couple of hundred kilobytes and part of the record, so
+   throwing it away on a deploy would leave somebody who kept an album looking
+   at an empty mount on the next flight for no benefit at all. */
+const COVERS = "shadow-harbor-covers";
+
+const KEEP = new Set([AUDIO, SHELL, PAGES, COVERS]);
 
 /** The offline stand-in, for a page nobody has visited yet. */
 const OFFLINE = "/offline";
@@ -34,6 +40,11 @@ const OFFLINE = "/offline";
    the cache key — a FLAC and an MP3 of the same track are different files and
    a device may hold either. */
 const AUDIO_PATH = /^\/api\/records\/[^/]+\/tracks\/[^/]+\/audio$/;
+
+/* A record's cover. Unlike the audio this is kept as a side effect of looking
+   at it, because it is small and because the alternative is an album page that
+   opens offline with a hole where the sleeve was. */
+const COVER_PATH = /^\/api\/records\/[^/]+\/cover$/;
 
 /** Content-hashed by the build, so it can be trusted forever. */
 const IMMUTABLE = /^\/(_next\/static|flac)\//;
@@ -209,6 +220,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (COVER_PATH.test(url.pathname)) {
+    event.respondWith(coverFor(request, url));
+    return;
+  }
+
   // Everything else under /api is live or it is wrong.
   if (url.pathname.startsWith("/api/")) return;
 
@@ -253,6 +269,39 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
+
+/**
+ * A cover: from the network when there is one, from the last copy when there
+ * is not.
+ *
+ * Network first rather than cache first, even though the URL carries a version
+ * and a cached copy can never be wrong for that URL. The reason is the version:
+ * when the owner replaces the art the page asks for a new URL, and a cache-first
+ * handler would still be right — it would just also be holding the old one
+ * forever. Writing through on every fetch and dropping the record's other
+ * entries keeps it to one sleeve per record.
+ */
+async function coverFor(request, url) {
+  const cache = await caches.open(COVERS);
+
+  try {
+    const fresh = await fetch(request);
+    if (fresh.ok) {
+      // One cover per record: the previous version's URL is now litter.
+      for (const key of await cache.keys()) {
+        const kept = new URL(key.url);
+        if (kept.pathname === url.pathname && kept.search !== url.search) {
+          await cache.delete(key);
+        }
+      }
+      await cache.put(new Request(request.url), fresh.clone()).catch(() => {});
+    }
+    return fresh;
+  } catch {
+    const hit = await cache.match(new Request(request.url), { ignoreVary: true });
+    return hit ?? Response.error();
+  }
+}
 
 /* Keeping and dropping a track happen in the page, not here.
    The worker is only ever the reader.

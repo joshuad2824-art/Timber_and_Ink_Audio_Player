@@ -16,6 +16,7 @@ import type { ListenFormat, TrackAssetSizes } from "@/data/types";
    plain script from the origin root. If either name changes, change it there. */
 const AUDIO_CACHE = "shadow-harbor-audio";
 const PAGES_CACHE = "shadow-harbor-pages-v1";
+const COVER_CACHE = "shadow-harbor-covers";
 
 /** The one URL shape for a track's bytes. Format is part of the cache key. */
 export function audioUrl(slug: string, trackId: string, format: ListenFormat): string {
@@ -257,6 +258,15 @@ export async function forgetRecord(slug: string): Promise<void> {
       (await pages.keys())
         .filter((request) => new URL(request.url).pathname === `/r/${slug}`)
         .map((request) => pages.delete(request)),
+    );
+
+    // And the sleeve. The worker keeps that one as a side effect of looking at
+    // it, so it is here whether or not anything was ever deliberately kept.
+    const covers = await caches.open(COVER_CACHE);
+    await Promise.all(
+      (await covers.keys())
+        .filter((request) => new URL(request.url).pathname === `/api/records/${slug}/cover`)
+        .map((request) => covers.delete(request)),
     );
   } catch {
     /* Nothing here is load-bearing for the lock itself, which is the cookie.
