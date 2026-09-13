@@ -140,7 +140,12 @@
 .matWrap {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  /* A print on the page, not the page itself. At 420 the mount ran the full
+     width of a phone's column and the record's own title was below the fold
+     before anything had been read — a sleeve worth looking at, given more of
+     the screen than the thing it is the sleeve for. Smaller leaves the title,
+     the meta line and the first track above the fold together. */
+  max-width: 320px;
 }
 
 .mat {

@@ -17,7 +17,11 @@
 .inner {
   max-width: min(var(--sh-width-album), 100%);
   margin: 0 auto;
-  padding: 0 var(--sh-gutter-right) 12px var(--sh-gutter-left);
+  /* The top padding is the gap between the brass rule and the scrub track.
+     With none, the 4px track sat 8px under a 2px line and the two read as one
+     thick banded edge; the rule is meant to close the bar off, not to crowd
+     the first thing inside it. */
+  padding: 8px var(--sh-gutter-right) 12px var(--sh-gutter-left);
 }
 
 /* ── the scrub track ─────────────────────────────────────────────────────────
