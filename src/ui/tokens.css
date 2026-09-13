@@ -90,8 +90,10 @@
   --sh-width-card: 400px;
   --sh-width-card-admin: 380px;
 
-  /* The album screen reserves this much for the fixed player bar. */
-  --sh-player-clearance: 168px;
+  /* The album screen reserves this much for the fixed player bar. Grows with
+     the bar: the 8px above the scrub track is 8px the last track row would
+     otherwise end up behind. */
+  --sh-player-clearance: 176px;
 
   /* The notch, and the rounded corners either side of it in landscape.
 
