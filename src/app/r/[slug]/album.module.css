@@ -42,7 +42,20 @@
   color: var(--sh-warning);
 }
 
+/* The print sits in the middle of the column; everything else on this screen
+   stays ranged left.
+
+   Centred here rather than on the device itself, because where a thing sits is
+   the screen's business and what it looks like is the device's — PhotoMat is
+   used once, but that is the line the other devices draw and there is no
+   reason for this one to draw it differently.
+
+   Flex rather than auto margins for the same reason: it centres the mount
+   without reaching inside it, so the tape strips, which are positioned against
+   the mount and hang past its corners, come along untouched. */
 .cover {
+  display: flex;
+  justify-content: center;
   margin: 22px 0 30px;
 }
 
