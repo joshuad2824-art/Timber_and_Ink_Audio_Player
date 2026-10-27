@@ -90,6 +90,7 @@ export class FakeAudio extends EventTarget {
   plays: Deferred[] = [];
   paused = true;
   ended = false;
+  loop = false;
   currentTime = 0;
   duration = NaN;
   preload = "auto";

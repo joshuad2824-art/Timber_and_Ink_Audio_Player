@@ -310,6 +310,28 @@ export class PlayerEngine {
   /** True while the live element is playing the silence between two tracks. */
   private inGap = false;
 
+  /**
+   * The element still playing the silence, on a loop, while the next track's
+   * file arrives on the other one. Null the rest of the time.
+   *
+   * The silence used to end on the dot and the same element went off to fetch
+   * the next track — and a lossless file comes through a function that reads
+   * the whole blob before it sends a byte, so that is seconds with nothing
+   * playing. On a locked iPhone, seconds with nothing playing is a page the
+   * phone suspends: the lock screen went on counting through a song nobody
+   * could hear, and it started from the top when the phone was unlocked. The
+   * silence now holds the page open until the next track is actually sounding.
+   */
+  private keeper: HTMLAudioElement | null = null;
+
+  /**
+   * Elements that have been started inside a tap, and so may start on their
+   * own later. iOS will not let an element play unprompted until it has; the
+   * handover at the end of the silence moves to the other element, so both
+   * need one. See `bless`.
+   */
+  private blessed = new WeakSet<HTMLAudioElement>();
+
   /** True once the current track's tail ramp has been started, so it is started once. */
   private fadingOut = false;
 
@@ -529,6 +551,7 @@ export class PlayerEngine {
 
     this.cancelFade();
     this.cancelGap();
+    this.bless();
 
     const restarting = i === this.index;
     this.index = i;
@@ -575,6 +598,7 @@ export class PlayerEngine {
     // the gap ends here, and the track gets the fade it was going to get.
     const betweenTracks = this.inGap;
     this.cancelGap();
+    this.bless();
 
     const src = this.srcFor(this.index);
     if (!src) return;
@@ -606,7 +630,9 @@ export class PlayerEngine {
   private async start(fadeSeconds = CUE_FADE_SECONDS) {
     const el = this.live();
     const rev = ++this.rev;
+    const keeper = this.keeper;
     this.wantPlaying = true;
+    this.blessed.add(el);
     // This element is ours now, including whatever a ramp in flight was going
     // to do with it — a pause that is about to be overruled by playing.
     this.cancelRamp(false);
@@ -628,6 +654,15 @@ export class PlayerEngine {
         return;
       }
       this.note("play refused", name);
+      this.stopKeeper();
+      if (keeper && name === "NotAllowedError" && this.pair) {
+        /* The other element was never started inside a tap, and this phone
+           wants one. Go back to the element that has been playing all along:
+           it is allowed, and a track that starts late beats one that does not
+           start. */
+        this.handBack(keeper);
+        return;
+      }
       /* Three different refusals wearing one exception.
 
          `NotAllowedError` is the browser declining to start audio without a
@@ -659,6 +694,7 @@ export class PlayerEngine {
       return;
     }
 
+    this.stopKeeper();
     this.playing = true;
     this.setTrouble(null);
     this.startTicking();
@@ -671,6 +707,7 @@ export class PlayerEngine {
   pause() {
     this.wantPlaying = false;
     this.rev++;
+    this.stopKeeper();
     this.cancelFade();
     this.note("paused");
 
@@ -810,6 +847,7 @@ export class PlayerEngine {
   private stopHere() {
     this.rev++;
     this.wantPlaying = false;
+    this.stopKeeper();
     this.cancelRamp(false);
     if (this.pair) {
       const el = this.live();
@@ -1108,31 +1146,131 @@ export class PlayerEngine {
       this.endGap();
     });
 
+    /* The next file starts arriving on the other element while the silence
+       plays, so three seconds of it are spent fetching rather than waiting. A
+       phone that will not buffer before play is asked still loses nothing:
+       the silence holds on until the track sounds, see `endGap`. */
+    this.cancelFade();
+    const slot = (1 - this.liveIndex) as 0 | 1;
+    const next = this.els()[slot];
+    const src = this.srcFor(to);
+    if (this.loaded[slot] !== src) {
+      next.preload = "auto";
+      next.src = src;
+      this.loaded[slot] = src;
+    }
+
     this.emit();
     this.publishMediaSession();
   }
 
-  /** The silence is over: the cued track goes on the same element, now. */
+  /**
+   * The silence is over: the cued track goes on, on the other element, and
+   * the silence keeps playing underneath until it does.
+   *
+   * Two elements rather than one so that something is always playing. On one
+   * element the silence had to stop before the track could be fetched, and a
+   * locked phone suspends a page in that pause. The silence loops — `loop`,
+   * not a timer — and `start` stops it the moment the track is sounding, or
+   * refused. So the gap is three seconds on a quick connection and as long as
+   * the file takes on a slow one, and never a gap the phone can fall into.
+   */
   private endGap() {
     this.inGap = false;
-    const el = this.live();
+    const keeper = this.live();
+    const slot = (1 - this.liveIndex) as 0 | 1;
+    const el = this.els()[slot];
     const src = this.srcFor(this.index);
-    el.src = src;
-    this.loaded[this.liveIndex] = src;
+    if (this.loaded[slot] !== src) {
+      el.src = src;
+      this.loaded[slot] = src;
+    }
     try {
       el.currentTime = this.position;
     } catch {
       /* not seekable yet; it starts from the top */
     }
+
+    keeper.loop = true;
+    this.keeper = keeper;
+    // It has just ended; asked again it starts from the top. Called before
+    // the track's own play, so the phone never sees a moment with neither.
+    keeper.play().catch(() => {
+      /* the track's own answer decides what happens next */
+    });
+
+    this.liveIndex = slot;
+    this.note("handover");
+    void this.start(FADE_IN_SECONDS);
+  }
+
+  /** The track is sounding, or will not: let the silence go. */
+  private stopKeeper() {
+    const k = this.keeper;
+    if (!k) return;
+    this.keeper = null;
+    k.loop = false;
+    k.pause();
+  }
+
+  /**
+   * The other element refused to start. Put the track on the one that has
+   * been playing the silence instead, which the phone already allows.
+   */
+  private handBack(keeper: HTMLAudioElement) {
+    const pair = this.els();
+    const slot = (pair[0] === keeper ? 0 : 1) as 0 | 1;
+    const other = pair[1 - slot];
+    other.pause();
+    this.liveIndex = slot;
+    const src = this.srcFor(this.index);
+    keeper.src = src;
+    this.loaded[slot] = src;
+    this.loaded[(1 - slot) as 0 | 1] = null;
+    this.note("handed back");
     void this.start(FADE_IN_SECONDS);
   }
 
   /**
    * Leave the silence. Whatever called this replaces or pauses the element,
-   * so the silence itself is left to them.
+   * so the silence itself is left to them — but a silence still holding the
+   * page open for a track that is no longer coming is stopped here.
    */
   private cancelGap() {
     this.inGap = false;
+    this.stopKeeper();
+  }
+
+  /**
+   * Start the idle element on the silence, inside the listener's tap, so it
+   * may start by itself later.
+   *
+   * iOS lets an element play without a gesture only once it has played with
+   * one. The handover at the end of each silence starts the track on the
+   * element that was idle, so on the first tap both get started: the live one
+   * on the track, this one on a moment of nothing that is paused as soon as it
+   * begins. Done once per element; a crossfade in progress owns the idle one
+   * and is left alone.
+   */
+  private bless() {
+    if (this.fade || this.pendingFade !== null) return;
+    const slot = (1 - this.liveIndex) as 0 | 1;
+    const idle = this.els()[slot];
+    if (this.blessed.has(idle)) return;
+    this.blessed.add(idle);
+
+    const gap = silence();
+    idle.src = gap;
+    this.loaded[slot] = gap;
+    idle.play().then(
+      () => {
+        // Only if nothing has claimed it since.
+        if (this.loaded[slot] === gap && slot !== this.liveIndex) idle.pause();
+      },
+      () => {
+        /* refused: the handover will find out, and hand back */
+      },
+    );
   }
 
   // ── volume ramps ──────────────────────────────────────────────────────────
@@ -1288,6 +1426,7 @@ export class PlayerEngine {
     this.note("paused from outside", `t=${el.currentTime.toFixed(1)}`);
     this.wantPlaying = false;
     this.rev++;
+    this.stopKeeper();
     this.cancelFade();
     this.cancelRamp(false);
     if (!this.inGap) this.position = el.currentTime;
@@ -1514,6 +1653,18 @@ export class PlayerEngine {
     if (!session || sessionOwner !== this) return;
     if (typeof session.setPositionState !== "function") return;
 
+    /* Between tracks there is no position to give. Published as zero at full
+       speed, the lock screen counts it up by itself — which is how it showed
+       a minute into a song that had not started. Cleared, it shows none. */
+    if (this.inGap || this.keeper) {
+      try {
+        session.setPositionState();
+      } catch {
+        /* nothing to clear */
+      }
+      return;
+    }
+
     const duration = this.duration();
     if (!Number.isFinite(duration) || duration <= 0) return;
 
@@ -1570,6 +1721,7 @@ export class PlayerEngine {
     this.rev++;
     this.wantPlaying = false;
     this.playing = false;
+    this.stopKeeper();
     this.stopTicking();
     this.cancelGap();
     this.cancelRamp(false);
@@ -1594,6 +1746,7 @@ export class PlayerEngine {
       }
     }
     this.pair = null;
+    this.blessed = new WeakSet();
     this.liveIndex = 0;
     this.loaded = [null, null];
     this.listeners.clear();
