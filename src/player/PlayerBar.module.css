@@ -116,6 +116,7 @@
 
 /* Every control clears 44px. */
 .control {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -158,8 +159,8 @@
 
 /* Shuffle and repeat are the only two controls that hold a state, so they are
    the only two that change colour: brass gold when they are on, and the same
-   cream as every other control when they are off. Gold against cream is the
-   whole signal — the listener should never have to press one to find out.
+   cream as every other control when they are off. Colour is not the only
+   signal, though — see the plate and dot below.
 
    Brass, not amber. They are metal, and only one thing in this view is allowed
    to be lit; gold that glowed would be a second sun. The engaged icon also
@@ -167,6 +168,41 @@
    the difference between gold and cream. */
 .engaged {
   color: var(--sh-brass-bright);
+}
+
+/* Gold alone was too quiet. Cream to brass on an 18px outline icon, at arm's
+   length on a phone, is a difference you have to go looking for — and the
+   listener should never have to press a toggle to find out which way it is.
+
+   So an engaged toggle is also a different shape: it sits on a pressed plate
+   (a faint wash inside a brass hairline) with a brass dot under the glyph.
+   Plate and dot are there or not there, which reads in grayscale and to a
+   listener who cannot tell gold from cream. Nothing here glows; the plate is
+   flat metal, and the amber button is still the only lit thing in the view. */
+.control.engaged {
+  background: var(--sh-wash-hover-strong);
+  box-shadow: inset 0 0 0 1px var(--rule-accent);
+}
+
+.control.engaged::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* The next track on shuffle. Muted metadata under the title, ellipsized, so it
+   answers "what's next?" without competing with "what's on". */
+.upNext {
+  padding-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── the one lit element ─────────────────────────────────────────────────────
