@@ -99,6 +99,27 @@ The prototype checks phrases in the browser and prints them on screen. In produc
   included; the last track of a record is the one exception, because an ending
   that was mastered to end is not one to fade. Repeat-one loops through the same
   silence rather than snapping back to zero.
+
+  The silence is *played*, not waited out: three seconds of silent WAV on the
+  same element, and the next track starts on that clip's `ended`. It used to
+  be a paused element and a `setTimeout`, and a locked iPhone does not run a
+  timer for a page with nothing playing — the next song waited for the screen
+  to come on. Nothing that moves the record forward may depend on a timer.
+- **iPhone owns its volume.** iOS ignores `audio.volume`, so there the bar has
+  no volume control, the Crossfade switch is hidden (two tracks at full level
+  is not a fade), and ramps are skipped rather than run silently. Detected by
+  writing and reading back, not by user agent.
+- **Next and Previous while paused cue the track and stay paused**, on the bar,
+  headphones and the lock screen alike. A track row is the explicit "play this".
+- **The lock screen offers tracks, not ten-second skips.** `seekbackward` and
+  `seekforward` are cleared, because on a phone they compete with previous and
+  next for the same two buttons. Scrubbing (`seekto`) stays.
+- **Up next shows only while shuffle is on.** In order, the track list already
+  answers it.
+- **`#log` on a record shows the player's own notes**, kept in memory only, for
+  diagnosing playback on a real phone. Nothing is stored or sent.
+- **`npm test`** runs the engine's tests against fake media elements and a
+  hand-stepped clock. A change to the engine comes with a test.
 - **Every ramp is eased, not linear.** A raised cosine, flat at both ends: a
   straight line changes volume at a constant rate, so it starts and stops moving
   abruptly even though the level never jumps, and that corner is the part a
@@ -111,8 +132,9 @@ The prototype checks phrases in the browser and prints them on screen. In produc
   controls that hold a state, so they are the only two that change colour, and
   the rest of the transport sits at the same cream as their off state. Brass
   gold, never amber — a toggle that glowed would be a second lit thing. The
-  engaged glyph also carries a heavier stroke, so the state does not rest on
-  hue alone.
+  engaged glyph also carries a heavier stroke, and sits on a flat plate (a
+  faint wash inside a 1px `--rule-accent` edge) with a brass dot beneath it, so
+  the state does not rest on hue alone and reads in grayscale.
 
 ## Open questions for the owner
 
