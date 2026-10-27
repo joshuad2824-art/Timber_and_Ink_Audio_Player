@@ -120,6 +120,12 @@ export function PlayerBar({
   const title = titles[state.index] ?? "";
   const hasAudio = titles.length > 0;
 
+  /* Up next, but only on shuffle. In order the track list already answers it
+     — the next row down — and a line repeating that would be furniture. On
+     shuffle nothing on the page does, and Next becomes a guess. */
+  const upNext =
+    state.shuffle && state.upNext >= 0 ? (titles[state.upNext] ?? "") : "";
+
   return (
     <div className={styles.bar}>
       <div className={styles.inner}>
@@ -169,6 +175,10 @@ export function PlayerBar({
                 : `${formatDuration(shown)} / ${formatDuration(state.duration)}`}
           </div>
         </div>
+
+        {upNext && (
+          <div className={`${type_.meta} ${styles.upNext}`}>Up next · {upNext}</div>
+        )}
 
         <div className={styles.controls}>
           <button
@@ -236,35 +246,40 @@ export function PlayerBar({
             )}
           </button>
 
-          <div className={styles.volumeWrap} ref={volumeRef}>
-            <button
-              type="button"
-              className={styles.control}
-              aria-label="Volume"
-              aria-expanded={volumeOpen}
-              disabled={!hasAudio}
-              onClick={() => setVolumeOpen((v) => !v)}
-            >
-              <Volume2 size={18} strokeWidth={1.5} />
-            </button>
+          {/* Not on an iPhone, where the level belongs to the buttons on the
+              side of the phone and the page cannot move it. A slider there
+              slid and changed nothing. */}
+          {state.volumeControl && (
+            <div className={styles.volumeWrap} ref={volumeRef}>
+              <button
+                type="button"
+                className={styles.control}
+                aria-label="Volume"
+                aria-expanded={volumeOpen}
+                disabled={!hasAudio}
+                onClick={() => setVolumeOpen((v) => !v)}
+              >
+                <Volume2 size={18} strokeWidth={1.5} />
+              </button>
 
-            {volumeOpen && (
-              <div className={styles.volumePopover}>
-                <input
-                  className={styles.volumeSlider}
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={Math.round(state.volume * 100)}
-                  aria-label="Volume level"
-                  onChange={(e) => engine.setVolume(Number(e.target.value) / 100)}
-                />
-                <span className={`${type_.meta} ${styles.volumeValue}`}>
-                  {Math.round(state.volume * 100)}%
-                </span>
-              </div>
-            )}
-          </div>
+              {volumeOpen && (
+                <div className={styles.volumePopover}>
+                  <input
+                    className={styles.volumeSlider}
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={Math.round(state.volume * 100)}
+                    aria-label="Volume level"
+                    onChange={(e) => engine.setVolume(Number(e.target.value) / 100)}
+                  />
+                  <span className={`${type_.meta} ${styles.volumeValue}`}>
+                    {Math.round(state.volume * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

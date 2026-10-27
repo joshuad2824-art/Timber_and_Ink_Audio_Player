@@ -10,6 +10,7 @@ import { ToastSlot, useToast } from "@/chrome/Toast";
 import { BookmarkButton, KeepToggle, OfflinePanel } from "@/offline/OfflinePanel";
 import { useKept } from "@/offline/useKept";
 import { PlayerEngine, type PlayerSnapshot } from "./engine";
+import { DiagnosticLog } from "./DiagnosticLog";
 import { PlayerBar } from "./PlayerBar";
 import album from "@/app/r/[slug]/album.module.css";
 import type_ from "@/ui/type.module.css";
@@ -71,6 +72,9 @@ export function AlbumPlayer({
 
   useEffect(() => engine.subscribe(setState), [engine]);
   useEffect(() => () => engine.destroy(), [engine]);
+  // Asks the browser what it lets a page do with the volume, so an iPhone
+  // loses the controls it would ignore before anyone reaches for them.
+  useEffect(() => engine.prepare(), [engine]);
 
   useEffect(() => {
     engine.load(slug, queue, "flac", {
@@ -95,11 +99,16 @@ export function AlbumPlayer({
             className={album.keepSlot}
           />
         )}
-        <Switch
-          label="Crossfade"
-          checked={state.crossfade}
-          onChange={(next) => engine.setCrossfade(next)}
-        />
+        {/* Not where the page cannot set a volume. On an iPhone two tracks
+            "crossfading" just play over each other at full level, so the
+            switch would promise a fade the phone will not let it make. */}
+        {state.volumeControl && (
+          <Switch
+            label="Crossfade"
+            checked={state.crossfade}
+            onChange={(next) => engine.setCrossfade(next)}
+          />
+        )}
       </div>
 
       <PairedRule className={album.break} />
@@ -201,6 +210,8 @@ export function AlbumPlayer({
       )}
 
       <ToastSlot message={toast} />
+
+      <DiagnosticLog engine={engine} />
 
       <PlayerBar engine={engine} titles={queue.map((t) => t.title)} />
     </>
