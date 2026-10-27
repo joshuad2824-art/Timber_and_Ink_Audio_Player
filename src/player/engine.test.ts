@@ -33,6 +33,23 @@ function audible(): FakeAudio | undefined {
 const isTrack = (el: FakeAudio | undefined, id: string) =>
   Boolean(el?.src.includes(`/tracks/${id}/audio`));
 
+/** The element playing a track, as opposed to the silence. */
+const sounding = () => FakeAudio.all.find((e) => !e.paused && e.src.includes("/tracks/"));
+/** The element playing the silence, if one is. */
+const silent = () => FakeAudio.all.find((e) => !e.paused && e.src.startsWith("data:"));
+
+/** Let the current track end, then the silence after it. */
+async function crossSeam() {
+  const track = sounding()!;
+  track.setDuration(200);
+  track.finish();
+  await flush();
+  const gap = silent()!;
+  gap.setDuration(3);
+  gap.finish();
+  await flush();
+}
+
 beforeEach(() => {
   env = install();
   engine = fresh();
@@ -61,20 +78,104 @@ describe("advancing with crossfade off", () => {
 
   test("three tracks in a row advance on media events alone, with every timer frozen", async () => {
     await engine.playTrack(0);
-    const el = audible()!;
-
     for (const id of ["b", "c"]) {
-      el.setDuration(200);
-      el.finish(); // the track ends
-      await flush();
-      el.setDuration(3);
-      el.finish(); // the silence ends
-      await flush();
-      assert.ok(isTrack(el, id), `track ${id} is on the element without a timer firing`);
-      assert.equal(el.paused, false, `track ${id} is playing`);
+      await crossSeam();
+      assert.ok(isTrack(sounding(), id), `track ${id} is playing without a timer firing`);
+      assert.equal(silent(), undefined, "and the silence has stopped");
     }
     assert.equal(engine.snapshot().index, 2);
-    assert.equal(FakeAudio.all.filter((e) => e.playCalls > 0).length, 1, "one element did it all");
+    assert.equal(FakeAudio.all.length, 2, "the same two elements throughout");
+  });
+
+  test("the next file starts arriving while the silence plays", async () => {
+    await engine.playTrack(0);
+    const track = sounding()!;
+    track.setDuration(200);
+    track.finish();
+    await flush();
+    const next = FakeAudio.all.find((e) => e !== silent())!;
+    assert.ok(isTrack(next, "b"));
+    assert.equal(next.preload, "auto");
+  });
+
+  test("a slow next file keeps the silence playing until the track sounds", async () => {
+    await engine.playTrack(0);
+    const track = sounding()!;
+    track.setDuration(200);
+    track.finish();
+    await flush();
+    const gap = silent()!;
+    FakeAudio.deferPlay = true;
+    gap.setDuration(3);
+    gap.finish();
+    await flush();
+
+    assert.equal(gap.paused, false, "the silence goes on");
+    assert.equal(gap.loop, true, "on a loop, not a timer");
+    const next = FakeAudio.all.find((e) => e !== gap)!;
+    assert.ok(isTrack(next, "b"));
+    assert.equal(engine.snapshot().playing, true);
+
+    next.plays.at(-1)!.resolve();
+    await flush();
+    assert.equal(gap.paused, true, "the silence stops once the track sounds");
+    assert.equal(gap.loop, false);
+  });
+
+  test("an element the phone will not start hands the track back to the one that was playing", async () => {
+    await engine.playTrack(0);
+    const track = sounding()!;
+    track.setDuration(200);
+    track.finish();
+    await flush();
+    const gap = silent()!;
+    FakeAudio.deferPlay = true;
+    gap.setDuration(3);
+    gap.finish();
+    await flush();
+    const next = FakeAudio.all.find((e) => e !== gap)!;
+    next.plays.at(-1)!.reject("NotAllowedError");
+    await flush();
+
+    assert.ok(isTrack(gap, "b"), "the track went to the element that was allowed");
+    gap.plays.at(-1)!.resolve();
+    await flush();
+    assert.equal(engine.snapshot().playing, true);
+    assert.equal(engine.snapshot().trouble, null);
+  });
+
+  test("pausing while the next file arrives stops the silence too", async () => {
+    await engine.playTrack(0);
+    const track = sounding()!;
+    track.setDuration(200);
+    track.finish();
+    await flush();
+    const gap = silent()!;
+    FakeAudio.deferPlay = true;
+    gap.setDuration(3);
+    gap.finish();
+    await flush();
+
+    engine.pause();
+    await env.clock.advance(1000);
+    assert.equal(gap.paused, true);
+    assert.equal(engine.snapshot().playing, false);
+  });
+
+  test("the lock screen is given no running clock between tracks", async () => {
+    await engine.playTrack(0);
+    const track = sounding()!;
+    track.setDuration(200);
+    track.finish();
+    await flush();
+    assert.equal(env.session.positions.at(-1), undefined, "position cleared in the silence");
+  });
+
+  test("the first tap also starts the other element, so it may start by itself later", async () => {
+    await engine.playTrack(0);
+    const other = FakeAudio.all.find((e) => !isTrack(e, "a"))!;
+    assert.equal(other.playCalls, 1);
+    assert.equal(other.paused, true, "and stops it at once");
   });
 
   test("the silence is three seconds of real audio, and the bar holds the next track at 0:00", async () => {
@@ -136,30 +237,24 @@ describe("advancing with crossfade off", () => {
     engine.cycleRepeat();
     assert.equal(engine.snapshot().repeat, "one");
     await engine.playTrack(1);
-    const el = audible()!;
-    el.setDuration(200);
-    el.finish();
+    const track = sounding()!;
+    track.setDuration(200);
+    track.finish();
     await flush();
     assert.equal(engine.snapshot().index, 1);
-    el.setDuration(3);
-    el.finish();
+    const gap = silent()!;
+    gap.setDuration(3);
+    gap.finish();
     await flush();
-    assert.ok(isTrack(el, "b"));
-    assert.equal(el.paused, false);
+    assert.ok(isTrack(sounding(), "b"));
   });
 
   test("repeat-all wraps from the last track to the first", async () => {
     engine.cycleRepeat();
     await engine.playTrack(2);
-    const el = audible()!;
-    el.setDuration(200);
-    el.finish();
-    await flush();
+    await crossSeam();
     assert.equal(engine.snapshot().index, 0);
-    el.setDuration(3);
-    el.finish();
-    await flush();
-    assert.ok(isTrack(el, "a"));
+    assert.ok(isTrack(sounding(), "a"));
   });
 });
 
@@ -237,10 +332,11 @@ describe("crossfade", () => {
 
   test("a slow incoming track is asked for once, not once per tick", async () => {
     const live = await nearTheEnd();
-    await env.clock.advance(1000);
     const incoming = FakeAudio.all.find((e) => e !== live)!;
-    assert.equal(incoming.playCalls, 1);
-    assert.equal(incoming.srcHistory.length, 1);
+    const before = incoming.playCalls;
+    await env.clock.advance(1000);
+    assert.equal(incoming.playCalls - before, 1);
+    assert.equal(incoming.srcHistory.filter((src) => src.includes("/tracks/")).length, 1);
   });
 
   test("a pause while the incoming track is starting is not undone when it starts", async () => {
@@ -248,7 +344,7 @@ describe("crossfade", () => {
     await env.clock.advance(250);
     const incoming = FakeAudio.all.find((e) => e !== live)!;
     engine.pause();
-    incoming.plays[0].resolve();
+    incoming.plays.at(-1)!.resolve();
     await env.clock.advance(5000);
 
     assert.equal(engine.snapshot().playing, false);
@@ -258,11 +354,12 @@ describe("crossfade", () => {
 
   test("a refused incoming track falls back to a plain advance, once", async () => {
     const live = await nearTheEnd();
-    await env.clock.advance(250);
     const incoming = FakeAudio.all.find((e) => e !== live)!;
-    incoming.plays[0].reject("NotAllowedError");
+    const before = incoming.playCalls;
+    await env.clock.advance(250);
+    incoming.plays.at(-1)!.reject("NotAllowedError");
     await env.clock.advance(1000);
-    assert.equal(incoming.playCalls, 1, "not retried every tick");
+    assert.equal(incoming.playCalls - before, 1, "not retried every tick");
 
     FakeAudio.deferPlay = false;
     live.finish();
@@ -509,7 +606,7 @@ describe("a platform that owns the volume", () => {
     el.setDuration(200);
     el.currentTime = 197;
     await env.clock.advance(1000);
-    assert.equal(FakeAudio.all.filter((e) => e.playCalls > 0).length, 1, "no second element");
+    assert.ok(!FakeAudio.all.some((e) => isTrack(e, "b")), "nothing started early to overlap");
     el.finish();
     await flush();
     assert.match(el.src, /^data:audio\/wav/);

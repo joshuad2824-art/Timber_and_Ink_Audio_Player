@@ -100,11 +100,16 @@ The prototype checks phrases in the browser and prints them on screen. In produc
   that was mastered to end is not one to fade. Repeat-one loops through the same
   silence rather than snapping back to zero.
 
-  The silence is *played*, not waited out: three seconds of silent WAV on the
-  same element, and the next track starts on that clip's `ended`. It used to
-  be a paused element and a `setTimeout`, and a locked iPhone does not run a
-  timer for a page with nothing playing — the next song waited for the screen
-  to come on. Nothing that moves the record forward may depend on a timer.
+  The silence is *played*, not waited out: three seconds of silent WAV, and
+  the next track starts on that clip's `ended`. Meanwhile the next file loads
+  on the other element, and at the handover the silence loops on until the
+  track is actually sounding. A locked iPhone suspends a page the moment
+  nothing is playing — first a `setTimeout` gap, then a gap spent fetching a
+  FLAC through a function that reads the whole blob before its first byte —
+  and the next song waited for the screen to come on. So: nothing that moves
+  the record forward may depend on a timer, and there is never a moment with
+  nothing playing. Both elements are started inside the first tap, because
+  iOS will not let an element start on its own until it has had one.
 - **iPhone owns its volume.** iOS ignores `audio.volume`, so there the bar has
   no volume control, the Crossfade switch is hidden (two tracks at full level
   is not a fade), and ramps are skipped rather than run silently. Detected by
